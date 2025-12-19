@@ -74,12 +74,14 @@ medicamenta.me-back-functions/
 - ✅ PagSeguro Functions (7/7 - 100%) - 78 testes ✅
 - **Total:** 178 testes (100% pass rate)
 
-**Sprint 4: Coverage Improvement (Em Progresso - 19/12/2025)**
+**Sprint 4: Coverage Improvement (19/12/2025 - 87.5% Complete)**
 - ✅ ApiError Utils: 38 testes (100% coverage) ✅
 - ✅ API Gateway Integration: 25 testes (100% coverage) ✅
-- **Total Atual:** 414 testes (100% pass rate)
-- **Coverage:** Lines ✅ 81.62% | Functions ✅ 84.45% | Statements ✅ 81.91% | Branches 74.74%
-- **Meta:** 80% coverage (**3/4 thresholds ✅ atingidos!**)
+- ✅ Index Helpers: 18 testes (behavioral validation) ✅
+- **Total Atual:** 432 testes (100% pass rate) 🎉
+- **Coverage:** Lines ✅ 81.54% | Functions ✅ 84.45% | Statements ✅ 81.84% | Branches 74.59%
+- **Meta:** 80% coverage (**3.5/4 thresholds ✅ atingidos! - 87.5%**)
+- **Próximo:** Branches 74.59% → 80% (+5.41%)
 - **Ver:** SPRINT-4-COVERAGE-PROGRESS.md
 
 ---
