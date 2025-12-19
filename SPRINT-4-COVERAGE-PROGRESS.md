@@ -10,28 +10,29 @@
 
 ### Métricas de Cobertura
 
-| Métrica | Inicial | Atual | Objetivo | Status |
-|---------|---------|-------|----------|--------|
-| **Functions** | 75.00% | **80.40%** | 80% | ✅ **ATINGIDO** |
-| **Statements** | 77.68% | 78.48% | 80% | 🟡 Faltam 1.52% |
-| **Lines** | 77.76% | 78.13% | 80% | 🟡 Faltam 1.87% |
-| **Branches** | 73.55% | 74.44% | 80% | 🟡 Faltam 5.56% |
+| Métrica | Sprint 3 | ApiError | API Gateway | Atual | Objetivo | Status |
+|---------|----------|----------|-------------|-------|----------|--------|
+| **Functions** | 75.00% | 80.40% | **84.45%** | **84.45%** | 80% | ✅ **+9.45%** |
+| **Statements** | 77.68% | 78.48% | **81.91%** | **81.91%** | 80% | ✅ **+4.23%** |
+| **Lines** | 77.76% | 78.13% | **81.62%** | **81.62%** | 80% | ✅ **+3.86%** |
+| **Branches** | 73.55% | 74.44% | **74.74%** | **74.74%** | 80% | 🟡 Faltam 5.26% |
 
 ### Testes
 
-| Métrica | Inicial | Atual | Delta |
-|---------|---------|-------|-------|
-| **Test Suites** | 28 | 29 | +1 |
-| **Total Tests** | 351 | 389 | +38 |
-| **Pass Rate** | 100% | 100% | ✅ |
+| Métrica | Sprint 3 | ApiError | API Gateway | Atual |
+|---------|----------|----------|-------------|-------|
+| **Test Suites** | 28 | 29 | **30** | **30** |
+| **Total Tests** | 351 | 389 | **414** | **414** |
+| **Pass Rate** | 100% | 100% | 100% | ✅ **100%** |
 
 ---
 
 ## ✅ Trabalho Completado
 
-### 1. ApiError Utils Tests (38 testes)
+### 1. ApiError Utils Tests (38 testes) ✅
 
-**Arquivo**: `src/api/utils/__tests__/api-error.test.ts`
+**Arquivo**: `src/api/utils/__tests__/api-error.test.ts`  
+**Data**: 19/12/2025
 
 **Cenários Cobertos**:
 - ✅ Construtor (3 testes)
@@ -52,6 +53,52 @@
 **Impacto**:
 - Functions: +5.4% (75% → 80.4%)
 - Melhorou cobertura de utilities
+- **Threshold Functions atingido!** ✅
+
+---
+
+### 2. API Gateway Integration Tests (25 testes) ✅
+
+**Arquivo**: `src/api/__tests__/index.test.ts`  
+**Data**: 19/12/2025
+
+**Cenários Cobertos**:
+- ✅ Health Check & API Info (2 testes)
+- ✅ Documentation Routes (3 testes)
+  * Redirect /docs → /api-docs
+  * Swagger UI HTML
+  * OpenAPI spec endpoint
+- ✅ API v1 Routes - Public (1 teste)
+  * POST /v1/auth/token
+- ✅ API v1 Routes - Protected (5 testes)
+  * GET /v1/patients
+  * GET /v1/medications
+  * GET /v1/adherence
+  * GET /v1/reports
+  * GET /v1/webhooks
+- ✅ 404 Handler (5 testes)
+  * Rotas inexistentes
+  * Diferentes métodos HTTP
+  * requestId nos erros
+- ✅ Middleware Configuration (4 testes)
+  * JSON/URL-encoded body parsing
+  * CORS headers
+  * Security headers (helmet)
+- ✅ Edge Cases (5 testes)
+  * Trailing slashes
+  * Query parameters
+  * Caracteres especiais
+  * Body grande
+  * Uptime validation
+
+**Cobertura**: ~100% do arquivo `src/api/index.ts`
+
+**Impacto**:
+- Functions: +4.05% (80.4% → 84.45%) ✅
+- Statements: +3.43% (78.48% → 81.91%) ✅
+- Lines: +3.49% (78.13% → 81.62%) ✅
+- Branches: +0.30% (74.44% → 74.74%)
+- **3 de 4 thresholds atingidos!** ✅✅✅
 
 ---
 

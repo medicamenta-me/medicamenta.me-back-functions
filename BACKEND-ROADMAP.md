@@ -51,7 +51,8 @@ medicamenta.me-back-functions/
 | Rotas da API (endpoints) | 30+ | ✅ Implementado | 🟢 97.3% (Sprint 2) |
 | Middlewares | 5 | ✅ Implementado | 🟢 98.22% (Sprint 1) |
 | Utilitários | 2 | ✅ Implementado | 🟢 100% (Sprint 4) |
-| Linhas de código | ~3.500 | ✅ Produção | 🟡 78.13% |
+| API Gateway | 1 | ✅ Implementado | 🟢 100% (Sprint 4) |
+| Linhas de código | ~3.500 | ✅ Produção | 🟢 81.62% |
 | Lint Warnings | 0 | ✅ OK | - |
 | Build Errors | 0 | ✅ OK | - |
 
@@ -75,9 +76,10 @@ medicamenta.me-back-functions/
 
 **Sprint 4: Coverage Improvement (Em Progresso - 19/12/2025)**
 - ✅ ApiError Utils: 38 testes (100% coverage) ✅
-- **Total Atual:** 389 testes (100% pass rate)
-- **Coverage:** Lines 78.13% | Functions ✅ 80.4% | Statements 78.48% | Branches 74.44%
-- **Meta:** 80% coverage (Functions ✅ atingido)
+- ✅ API Gateway Integration: 25 testes (100% coverage) ✅
+- **Total Atual:** 414 testes (100% pass rate)
+- **Coverage:** Lines ✅ 81.62% | Functions ✅ 84.45% | Statements ✅ 81.91% | Branches 74.74%
+- **Meta:** 80% coverage (**3/4 thresholds ✅ atingidos!**)
 - **Ver:** SPRINT-4-COVERAGE-PROGRESS.md
 
 ---
@@ -94,7 +96,8 @@ medicamenta.me-back-functions/
    - 🟢 API Routes: 97.3% (Sprint 2 ✅)
    - 🟢 Cloud Functions: 100% (Sprint 3 ✅)
    - 🟢 Utilitários: 100% (Sprint 4 ✅)
-   - 🟡 Overall Coverage: 78.13% (Target: 100%)
+   - 🟢 API Gateway: 100% (Sprint 4 ✅)
+   - 🟢 Overall Coverage: 81.62% (Target: 100%) - **3/4 thresholds ✅**
 
 2. **Testes de Integração**
    - 🟢 Fluxos de API RESTful (Sprint 2 ✅)

@@ -207,6 +207,9 @@ app.use(errorHandler);
 // EXPORT FIREBASE FUNCTION
 // ====================================
 
+// Export app for testing
+export { app };
+
 export const api = functions
   .runWith({
     timeoutSeconds: 60,
