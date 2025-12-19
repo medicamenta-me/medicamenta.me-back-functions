@@ -49,10 +49,10 @@ export const createStripeCheckoutSession = functions.https.onCall(
         });
         customerId = customer.id;
 
-        // Save customer ID to Firestore
-        await admin.firestore().collection('users').doc(userId).update({
+        // Save customer ID to Firestore (use set with merge to create if not exists)
+        await admin.firestore().collection('users').doc(userId).set({
           stripeCustomerId: customerId,
-        });
+        }, { merge: true });
       }
 
       // Create checkout session
@@ -98,7 +98,7 @@ export const createStripeCheckoutSession = functions.https.onCall(
  */
 export const stripeWebhook = functions.https.onRequest(async (req, res) => {
   const sig = req.headers['stripe-signature'] as string;
-  const webhookSecret = functions.config().stripe.webhook_secret;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || functions.config()?.stripe?.webhook_secret;
 
   let event: Stripe.Event;
 
@@ -513,6 +513,47 @@ export const getStripePaymentHistory = functions.https.onCall(async (data, conte
     };
   } catch (error: any) {
     console.error('Error getting payment history:', error);
+    throw new functions.https.HttpsError('internal', error?.message || 'Unknown error');
+  }
+});
+
+/**
+ * Update Stripe subscription (upgrade/downgrade plan)
+ */
+export const updateStripeSubscription = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { subscriptionId, newPriceId } = data;
+
+  if (!subscriptionId || !newPriceId) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: subscriptionId, newPriceId');
+  }
+
+  try {
+    // Get current subscription
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+    // Update subscription with new price
+    const updated = await stripe.subscriptions.update(subscriptionId, {
+      items: [
+        {
+          id: subscription.items.data[0].id,
+          price: newPriceId,
+        },
+      ],
+      proration_behavior: 'always_invoice', // Charge/credit prorated amount immediately
+    });
+
+    return {
+      subscriptionId: updated.id,
+      newPrice: newPriceId,
+      status: updated.status,
+      currentPeriodEnd: updated.current_period_end,
+    };
+  } catch (error: any) {
+    console.error('Error updating subscription:', error);
     throw new functions.https.HttpsError('internal', error?.message || 'Unknown error');
   }
 });

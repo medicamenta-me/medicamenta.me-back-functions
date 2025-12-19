@@ -15,7 +15,7 @@ const PAGSEGURO_CONFIG = {
   },
 };
 
-const isProd = functions.config().pagseguro?.environment === 'production';
+const isProd = (process.env.PAGSEGURO_ENVIRONMENT || functions.config()?.pagseguro?.environment) === 'production';
 const API_URL = isProd ? PAGSEGURO_CONFIG.production.apiUrl : PAGSEGURO_CONFIG.sandbox.apiUrl;
 const CHECKOUT_URL = isProd
   ? PAGSEGURO_CONFIG.production.checkoutUrl
@@ -43,8 +43,8 @@ export const createPagSeguroSubscription = functions.https.onCall(
         );
       }
 
-      const email = functions.config().pagseguro.email;
-      const token = functions.config().pagseguro.token;
+      const email = process.env.PAGSEGURO_EMAIL || functions.config()?.pagseguro?.email;
+      const token = process.env.PAGSEGURO_TOKEN || functions.config()?.pagseguro?.token;
 
       // Create subscription XML
       const subscriptionXml = buildSubscriptionXml(planCode, customer, userId);
@@ -129,8 +129,8 @@ export const pagseguroNotification = functions.https.onRequest(async (req, res) 
       return;
     }
 
-    const email = functions.config().pagseguro.email;
-    const token = functions.config().pagseguro.token;
+    const email = process.env.PAGSEGURO_EMAIL || functions.config()?.pagseguro?.email;
+    const token = process.env.PAGSEGURO_TOKEN || functions.config()?.pagseguro?.token;
 
     // Get notification details from PagSeguro
     let apiEndpoint = '';
@@ -291,8 +291,8 @@ export const getPagSeguroSubscriptionStatus = functions.https.onCall(
     }
 
     try {
-      const email = functions.config().pagseguro.email;
-      const token = functions.config().pagseguro.token;
+      const email = process.env.PAGSEGURO_EMAIL || functions.config()?.pagseguro?.email;
+      const token = process.env.PAGSEGURO_TOKEN || functions.config()?.pagseguro?.token;
 
       const response = await axios.get(
         `${API_URL}/v2/pre-approvals/${subscriptionCode}?email=${email}&token=${token}`
@@ -333,8 +333,8 @@ export const cancelPagSeguroSubscription = functions.https.onCall(
     }
 
     try {
-      const email = functions.config().pagseguro.email;
-      const token = functions.config().pagseguro.token;
+      const email = process.env.PAGSEGURO_EMAIL || functions.config()?.pagseguro?.email;
+      const token = process.env.PAGSEGURO_TOKEN || functions.config()?.pagseguro?.token;
 
       await axios.put(
         `${API_URL}/v2/pre-approvals/${subscriptionCode}/cancel?email=${email}&token=${token}`
@@ -365,8 +365,8 @@ export const suspendPagSeguroSubscription = functions.https.onCall(
     }
 
     try {
-      const email = functions.config().pagseguro.email;
-      const token = functions.config().pagseguro.token;
+      const email = process.env.PAGSEGURO_EMAIL || functions.config()?.pagseguro?.email;
+      const token = process.env.PAGSEGURO_TOKEN || functions.config()?.pagseguro?.token;
 
       await axios.put(
         `${API_URL}/v2/pre-approvals/${subscriptionCode}/suspend?email=${email}&token=${token}`
@@ -397,8 +397,8 @@ export const reactivatePagSeguroSubscription = functions.https.onCall(
     }
 
     try {
-      const email = functions.config().pagseguro.email;
-      const token = functions.config().pagseguro.token;
+      const email = process.env.PAGSEGURO_EMAIL || functions.config()?.pagseguro?.email;
+      const token = process.env.PAGSEGURO_TOKEN || functions.config()?.pagseguro?.token;
 
       await axios.put(
         `${API_URL}/v2/pre-approvals/${subscriptionCode}/reactivate?email=${email}&token=${token}`
@@ -429,8 +429,8 @@ export const getPagSeguroTransactionHistory = functions.https.onCall(
     }
 
     try {
-      const email = functions.config().pagseguro.email;
-      const token = functions.config().pagseguro.token;
+      const email = process.env.PAGSEGURO_EMAIL || functions.config()?.pagseguro?.email;
+      const token = process.env.PAGSEGURO_TOKEN || functions.config()?.pagseguro?.token;
 
       const initialDate = new Date();
       initialDate.setDate(initialDate.getDate() - days);

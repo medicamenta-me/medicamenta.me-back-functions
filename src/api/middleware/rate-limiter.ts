@@ -9,7 +9,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../utils/api-error';
 
 // In-memory fallback (use Redis in production)
-const requestCounts = new Map<string, { count: number; resetTime: number }>();
+export const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
 interface RateLimitConfig {
   windowMs: number;     // Janela de tempo em ms

@@ -2,23 +2,23 @@
  * 📈 Reports Routes
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import * as admin from 'firebase-admin';
 import { ApiError } from '../utils/api-error';
 
 const router = Router();
-const db = admin.firestore();
+const getDb = () => admin.firestore();
 
 /**
  * GET /v1/reports/adherence
  * Generate adherence report
  */
-router.get('/adherence', async (req: Request, res: Response) => {
+router.get('/adherence', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { startDate, endDate, patientId } = req.query;
 
-    let query = db.collection('patients')
+    let query = getDb().collection('patients')
       .where('partnerId', '==', partnerId);
 
     if (patientId) {
@@ -32,13 +32,13 @@ router.get('/adherence', async (req: Request, res: Response) => {
         const patient = patientDoc.data();
         
         // Get medications
-        const medicationsSnapshot = await db.collection('medications')
+        const medicationsSnapshot = await getDb().collection('medications')
           .where('patientId', '==', patientDoc.id)
           .where('status', '==', 'active')
           .get();
 
         // Get dose history
-        let doseQuery = db.collection('dose_history')
+        let doseQuery = getDb().collection('dose_history')
           .where('patientId', '==', patientDoc.id);
 
         if (startDate) {
@@ -83,7 +83,7 @@ router.get('/adherence', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    throw error;
+    next(error);
   }
 });
 
@@ -91,12 +91,12 @@ router.get('/adherence', async (req: Request, res: Response) => {
  * GET /v1/reports/compliance
  * Generate compliance report
  */
-router.get('/compliance', async (req: Request, res: Response) => {
+router.get('/compliance', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
 
     // Get all patients
-    const patientsSnapshot = await db.collection('patients')
+    const patientsSnapshot = await getDb().collection('patients')
       .where('partnerId', '==', partnerId)
       .where('status', '==', 'active')
       .get();
@@ -104,7 +104,7 @@ router.get('/compliance', async (req: Request, res: Response) => {
     const totalPatients = patientsSnapshot.size;
 
     // Get medication stats
-    const medicationsSnapshot = await db.collection('medications')
+    const medicationsSnapshot = await getDb().collection('medications')
       .where('partnerId', '==', partnerId)
       .where('status', '==', 'active')
       .get();
@@ -115,7 +115,7 @@ router.get('/compliance', async (req: Request, res: Response) => {
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
 
-    const dosesSnapshot = await db.collection('dose_history')
+    const dosesSnapshot = await getDb().collection('dose_history')
       .where('createdAt', '>=', last30Days)
       .get();
 
@@ -140,7 +140,7 @@ router.get('/compliance', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    throw error;
+    next(error);
   }
 });
 
@@ -148,7 +148,7 @@ router.get('/compliance', async (req: Request, res: Response) => {
  * POST /v1/reports/export
  * Export report in various formats
  */
-router.post('/export', async (req: Request, res: Response) => {
+router.post('/export', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { reportType, format = 'json' } = req.body;
 
@@ -178,7 +178,7 @@ router.post('/export', async (req: Request, res: Response) => {
       throw new ApiError(400, 'INVALID_FORMAT', `Unknown format: ${format}`);
     }
   } catch (error) {
-    throw error;
+    next(error);
   }
 });
 

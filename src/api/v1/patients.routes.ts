@@ -4,18 +4,18 @@
  * CRUD operations for patients
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import * as admin from 'firebase-admin';
 import { ApiError } from '../utils/api-error';
 
 const router = Router();
-const db = admin.firestore();
+const getDb = () => admin.firestore();
 
 /**
  * POST /v1/patients
  * Create new patient
  */
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const {
@@ -59,10 +59,10 @@ router.post('/', async (req: Request, res: Response) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    const docRef = await db.collection('patients').add(patient);
+    const docRef = await getDb().collection('patients').add(patient);
 
     // Log creation
-    await db.collection('audit_logs').add({
+    await getDb().collection('audit_logs').add({
       action: 'PATIENT_CREATED',
       partnerId,
       patientId: docRef.id,
@@ -75,21 +75,19 @@ router.post('/', async (req: Request, res: Response) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
-  } catch (error) {
-    throw error;
-  }
+  } catch (error) { next(error); }
 });
 
 /**
  * GET /v1/patients/:id
  * Get patient by ID
  */
-router.get('/:id', async (req: Request, res: Response, ) => {
+router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const patientRef = db.collection('patients').doc(id);
+    const patientRef = getDb().collection('patients').doc(id);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
@@ -107,21 +105,19 @@ router.get('/:id', async (req: Request, res: Response, ) => {
       id: patientDoc.id,
       ...patient,
     });
-  } catch (error) {
-    throw error;
-  }
+  } catch (error) { next(error); }
 });
 
 /**
  * GET /v1/patients
  * List patients
  */
-router.get('/', async (req: Request, res: Response, ) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { limit = 20, offset = 0, status, search } = req.query;
 
-    let query = db.collection('patients')
+    let query = getDb().collection('patients')
       .where('partnerId', '==', partnerId);
 
     // Filter by status
@@ -159,21 +155,19 @@ router.get('/', async (req: Request, res: Response, ) => {
         total: filteredPatients.length,
       },
     });
-  } catch (error) {
-    throw error;
-  }
+  } catch (error) { next(error); }
 });
 
 /**
  * PATCH /v1/patients/:id
  * Update patient
  */
-router.patch('/:id', async (req: Request, res: Response, ) => {
+router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const patientRef = db.collection('patients').doc(id);
+    const patientRef = getDb().collection('patients').doc(id);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
@@ -218,7 +212,7 @@ router.patch('/:id', async (req: Request, res: Response, ) => {
     await patientRef.update(updates);
 
     // Log update
-    await db.collection('audit_logs').add({
+    await getDb().collection('audit_logs').add({
       action: 'PATIENT_UPDATED',
       partnerId,
       patientId: id,
@@ -232,22 +226,20 @@ router.patch('/:id', async (req: Request, res: Response, ) => {
       id: updatedDoc.id,
       ...updatedDoc.data(),
     });
-  } catch (error) {
-    throw error;
-  }
+  } catch (error) { next(error); }
 });
 
 /**
  * DELETE /v1/patients/:id
  * Delete patient (soft delete)
  */
-router.delete('/:id', async (req: Request, res: Response, ) => {
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
     const { hard = false } = req.query;
 
-    const patientRef = db.collection('patients').doc(id);
+    const patientRef = getDb().collection('patients').doc(id);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
@@ -273,7 +265,7 @@ router.delete('/:id', async (req: Request, res: Response, ) => {
     }
 
     // Log deletion
-    await db.collection('audit_logs').add({
+    await getDb().collection('audit_logs').add({
       action: hard === 'true' ? 'PATIENT_HARD_DELETED' : 'PATIENT_DELETED',
       partnerId,
       patientId: id,
@@ -281,9 +273,8 @@ router.delete('/:id', async (req: Request, res: Response, ) => {
     });
 
     res.status(204).send();
-  } catch (error) {
-    throw error;
-  }
+  } catch (error) { next(error); }
 });
 
 export const patientsRouter = router;
+

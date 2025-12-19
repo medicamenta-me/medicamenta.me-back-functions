@@ -74,6 +74,7 @@ router.post('/token', async (req: Request, res: Response, next: NextFunction) =>
       await db.collection('refresh_tokens').add({
         partnerId: client_id,
         token: refreshToken,
+        revoked: false,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
       });
@@ -105,11 +106,16 @@ router.post('/token', async (req: Request, res: Response, next: NextFunction) =>
       const tokensRef = db.collection('refresh_tokens');
       const tokenSnapshot = await tokensRef
         .where('token', '==', refresh_token)
-        .where('revoked', '==', false)
         .limit(1)
         .get();
 
       if (tokenSnapshot.empty) {
+        throw new ApiError(401, 'INVALID_GRANT', 'Refresh token not found');
+      }
+
+      // Verify token is not revoked (check directly on document to avoid eventual consistency issues)
+      const tokenData = tokenSnapshot.docs[0].data();
+      if (tokenData.revoked === true) {
         throw new ApiError(401, 'INVALID_GRANT', 'Refresh token has been revoked');
       }
 
@@ -203,16 +209,17 @@ router.post('/api-key', async (req: Request, res: Response, next: NextFunction) 
     }
 
     // Generate API key
+    const keyName = name || 'Default API Key';
     const apiKey = await generateApiKey(
       client_id,
-      name || 'Default API Key',
+      keyName,
       tier,
       permissions
     );
 
     res.status(201).json({
       api_key: apiKey,
-      name,
+      name: keyName,
       tier,
       permissions,
       created_at: new Date().toISOString(),

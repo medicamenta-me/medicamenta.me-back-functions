@@ -10,7 +10,7 @@ import { ApiError } from '../utils/api-error';
 import crypto from 'crypto';
 
 const router = Router();
-const db = admin.firestore();
+const getDb = () => admin.firestore();
 
 /**
  * POST /v1/webhooks
@@ -79,7 +79,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       },
     };
 
-    const docRef = await db.collection('webhooks').add(webhook);
+    const docRef = await getDb().collection('webhooks').add(webhook);
 
     res.status(201).json({
       id: docRef.id,
@@ -100,7 +100,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
 
-    const snapshot = await db.collection('webhooks')
+    const snapshot = await getDb().collection('webhooks')
       .where('partnerId', '==', partnerId)
       .get();
 
@@ -129,7 +129,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const webhookRef = db.collection('webhooks').doc(id);
+    const webhookRef = getDb().collection('webhooks').doc(id);
     const webhookDoc = await webhookRef.get();
 
     if (!webhookDoc.exists) {
@@ -160,7 +160,7 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const webhookRef = db.collection('webhooks').doc(id);
+    const webhookRef = getDb().collection('webhooks').doc(id);
     const webhookDoc = await webhookRef.get();
 
     if (!webhookDoc.exists) {
@@ -190,7 +190,7 @@ router.post('/:id/test', async (req: Request, res: Response, next: NextFunction)
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const webhookRef = db.collection('webhooks').doc(id);
+    const webhookRef = getDb().collection('webhooks').doc(id);
     const webhookDoc = await webhookRef.get();
 
     if (!webhookDoc.exists) {

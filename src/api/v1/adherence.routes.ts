@@ -9,7 +9,7 @@ import * as admin from 'firebase-admin';
 import { ApiError } from '../utils/api-error';
 
 const router = Router();
-const db = admin.firestore();
+const getDb = () => admin.firestore();
 
 /**
  * GET /v1/adherence/:patientId
@@ -22,7 +22,7 @@ router.get('/:patientId', async (req: Request, res: Response, next: NextFunction
     const { startDate, endDate, medicationId } = req.query;
 
     // Verify patient ownership
-    const patientRef = db.collection('patients').doc(patientId);
+    const patientRef = getDb().collection('patients').doc(patientId);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
@@ -34,7 +34,7 @@ router.get('/:patientId', async (req: Request, res: Response, next: NextFunction
     }
 
     // Query dose history
-    let query = db.collection('dose_history')
+    let query = getDb().collection('dose_history')
       .where('patientId', '==', patientId);
 
     if (medicationId) {
@@ -94,7 +94,7 @@ router.get('/:patientId/history', async (req: Request, res: Response, next: Next
     const { limit = 100, offset = 0, status, medicationId } = req.query;
 
     // Verify patient ownership
-    const patientRef = db.collection('patients').doc(patientId);
+    const patientRef = getDb().collection('patients').doc(patientId);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
@@ -105,7 +105,7 @@ router.get('/:patientId/history', async (req: Request, res: Response, next: Next
       throw new ApiError(403, 'FORBIDDEN', 'Access denied');
     }
 
-    let query = db.collection('dose_history')
+    let query = getDb().collection('dose_history')
       .where('patientId', '==', patientId);
 
     if (status) {
@@ -159,7 +159,7 @@ router.post('/confirm', async (req: Request, res: Response, next: NextFunction) 
     }
 
     // Verify patient ownership
-    const patientRef = db.collection('patients').doc(patientId);
+    const patientRef = getDb().collection('patients').doc(patientId);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
@@ -171,7 +171,7 @@ router.post('/confirm', async (req: Request, res: Response, next: NextFunction) 
     }
 
     // Verify medication ownership
-    const medicationRef = db.collection('medications').doc(medicationId);
+    const medicationRef = getDb().collection('medications').doc(medicationId);
     const medicationDoc = await medicationRef.get();
 
     if (!medicationDoc.exists) {
@@ -196,7 +196,7 @@ router.post('/confirm', async (req: Request, res: Response, next: NextFunction) 
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    const docRef = await db.collection('dose_history').add(doseRecord);
+    const docRef = await getDb().collection('dose_history').add(doseRecord);
 
     // Update medication stats
     await medicationRef.update({
@@ -223,7 +223,7 @@ async function getAdherenceByMedication(
   patientId: string,
   partnerId: string
 ): Promise<any[]> {
-  const medicationsSnapshot = await db.collection('medications')
+  const medicationsSnapshot = await getDb().collection('medications')
     .where('patientId', '==', patientId)
     .where('partnerId', '==', partnerId)
     .where('status', '==', 'active')
@@ -233,7 +233,7 @@ async function getAdherenceByMedication(
     medicationsSnapshot.docs.map(async (medicationDoc) => {
       const medication = medicationDoc.data();
       
-      const doseSnapshot = await db.collection('dose_history')
+      const doseSnapshot = await getDb().collection('dose_history')
         .where('medicationId', '==', medicationDoc.id)
         .get();
 

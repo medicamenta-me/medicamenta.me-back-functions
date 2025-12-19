@@ -1,6 +1,28 @@
 # 🧪 Testing Guide - Backend Functions
 
-**Última atualização:** 12/11/2025
+**Última atualização:** 18/12/2025
+
+---
+
+## ⚠️ PRÉ-REQUISITO: Firebase Emulators
+
+**IMPORTANTE:** Os testes requerem que o **Firestore Emulator** esteja rodando!
+
+### Iniciar Emulators (Terminal separado)
+
+```bash
+# Opção 1: Script npm
+npm run emulators:start
+
+# Opção 2: Firebase CLI direto
+firebase emulators:start --only firestore
+
+# Verificar se está rodando
+# PowerShell: Test-NetConnection localhost -Port 8080
+# Browser: http://localhost:4000
+```
+
+**Porta:** Firestore Emulator = `localhost:8080`
 
 ---
 
@@ -10,16 +32,182 @@
 ```bash
 npm run build
 ```
-**Status:** ✅ Passando
+**Status:** ✅ Passando (0 erros TypeScript)
 
 ### 2. Lint Test
 ```bash
 npm run lint
 ```
 
-### 3. Unit Tests (TODO)
+### 3. Unit Tests ✅
 ```bash
+# ATENÇÃO: Requer emulators rodando!
 npm test
+```
+**Status:** 🟡 222/351 testes passando (129 aguardando emulator)
+
+---
+
+## 🎯 Sprint 1: Middleware Tests (63 testes) ✅
+
+Testes de integração para todos os middlewares de API.
+
+### Coverage: 98.22%
+
+```bash
+npm test -- middleware
+```
+
+### Arquivos Testados:
+- `auth.middleware.test.ts` - Autenticação e JWT (18 testes)
+- `rate-limiter.middleware.test.ts` - Rate limiting (13 testes)
+- `api-key.middleware.test.ts` - API keys validation (10 testes)
+- `error-handler.middleware.test.ts` - Error handling (12 testes)
+- `request-logger.middleware.test.ts` - Logging (10 testes)
+
+### Resultados:
+```
+Test Suites: 5 passed, 5 total
+Tests:       63 passed, 63 total
+Time:        ~25s
+Coverage:    98.22%
+```
+
+---
+
+## 🎯 Sprint 2: API Routes Tests (110 testes) ✅
+
+Testes de integração para todas as rotas da API v1.
+
+```bash
+npm test -- routes
+```
+
+### Arquivos Testados:
+
+#### 1. auth.routes.test.ts (19 testes)
+- POST /v1/auth/login - Login com email/senha
+- POST /v1/auth/register - Registro de usuários
+- POST /v1/auth/refresh - Refresh tokens
+- GET /v1/auth/me - Dados do usuário autenticado
+- POST /v1/auth/logout - Logout
+
+```bash
+npm test -- auth.routes
+```
+
+#### 2. medications.routes.test.ts (19 testes)
+- GET /v1/medications - Listar medicações
+- POST /v1/medications - Criar medicação
+- GET /v1/medications/:id - Obter medicação
+- PUT /v1/medications/:id - Atualizar medicação
+- DELETE /v1/medications/:id - Deletar medicação
+
+```bash
+npm test -- medications.routes
+```
+
+#### 3. patients.routes.test.ts (20 testes)
+- GET /v1/patients - Listar pacientes
+- POST /v1/patients - Criar paciente
+- GET /v1/patients/:id - Obter paciente
+- PUT /v1/patients/:id - Atualizar paciente
+- DELETE /v1/patients/:id - Deletar paciente
+
+```bash
+npm test -- patients.routes
+```
+
+#### 4. adherence.routes.test.ts (21 testes)
+- GET /v1/adherence/:patientId - Métricas de aderência
+- GET /v1/adherence/:patientId/history - Histórico de doses
+- POST /v1/adherence/confirm - Confirmar dose tomada
+
+```bash
+npm test -- adherence.routes
+```
+
+#### 5. reports.routes.test.ts (14 testes)
+- GET /v1/reports/adherence - Relatório de aderência
+- GET /v1/reports/compliance - Relatório de compliance
+- POST /v1/reports/export - Exportar relatórios (JSON/CSV)
+
+```bash
+npm test -- reports.routes
+```
+
+#### 6. webhooks.routes.test.ts (17 testes)
+- POST /v1/webhooks - Criar webhook
+- GET /v1/webhooks - Listar webhooks
+- GET /v1/webhooks/:id - Obter webhook
+- DELETE /v1/webhooks/:id - Deletar webhook
+- POST /v1/webhooks/:id/test - Testar webhook delivery
+
+```bash
+npm test -- webhooks.routes
+```
+
+### Resultados Sprint 2:
+```
+Test Suites: 6 passed, 6 total
+Tests:       107 passed, 3 skipped, 110 total
+Time:        ~55s
+Pass Rate:   97.3% (107/110)
+```
+
+**Nota:** 1 teste de auth.routes.test.ts pode falhar ocasionalmente devido a eventual consistency do Firebase Emulator.
+
+### Padrões Aplicados:
+
+1. **Lazy Initialization:**
+   ```typescript
+   const getDb = () => admin.firestore();
+   ```
+
+2. **Integration Tests:**
+   - Firebase Emulator (Firestore)
+   - Sem mocks (testes de integração reais)
+   - Mock de auth middleware para injetar partnerId
+
+3. **Error Handling:**
+   ```typescript
+   try {
+     // logic
+   } catch (error) {
+     next(error);
+   }
+   ```
+
+4. **Test Structure:**
+   ```typescript
+   beforeAll(() => {
+     // Setup test data
+   });
+   
+   afterAll(async () => {
+     // Cleanup Firestore
+   });
+   ```
+
+---
+
+## 🧪 Executar Todos os Testes
+
+```bash
+# Todos os testes
+npm test
+
+# Com coverage
+npm test -- --coverage
+
+# Sem coverage (mais rápido)
+npm test -- --no-coverage
+
+# Watch mode
+npm test -- --watch
+
+# Específico por arquivo
+npm test -- auth.routes.test.ts
 ```
 
 ---
@@ -383,6 +571,126 @@ export default function() {
 
 # Executar
 k6 run --vus 10 --duration 30s test.js
+```
+
+---
+
+## 🎯 Sprint 3: Cloud Functions Tests (76 testes) 🔄
+
+Testes unitários e de integração para Cloud Functions (Stripe, PagSeguro, OCR).
+
+### Status: 35% completo (6/17 funções)
+
+```bash
+npm test -- __tests__
+```
+
+### 📸 OCR Functions (21 testes) ✅ COMPLETO
+
+#### processImageWithCloudVision.test.ts (12 cenários)
+**Coverage:** 97.18% statements | 82.25% branches | 100% functions
+
+```bash
+npm test -- processImageWithCloudVision.test.ts
+```
+
+**Positivos:**
+- ✅ Processar imagem e extrair texto
+- ✅ Retornar blocks individuais
+- ✅ Processar sem scanId
+
+**Negativos:**
+- ✅ Erro se não autenticado
+- ✅ Erro se imageData/userId ausente
+- ✅ Erro se processar imagem de outro usuário
+- ✅ Success:false se nenhum texto detectado
+
+**Edge Cases:**
+- ✅ Falha na API Cloud Vision
+- ✅ Imagem base64 inválida
+- ✅ Imagem muito grande
+- ✅ Detections sem boundingPoly
+
+#### autoProcessLowConfidenceScans.test.ts (9 cenários)
+Trigger Firestore que processa automaticamente scans com confiança < 70%
+
+```bash
+npm test -- autoProcessLowConfidenceScans.test.ts
+```
+
+**Positivos:**
+- ✅ Processar automaticamente baixa confiança
+- ✅ Manter engine original se melhor
+
+**Negativos:**
+- ✅ NÃO processar se confiança >= 70%
+- ✅ NÃO processar se já processado
+- ✅ Salvar erros apropriadamente
+
+**Edge Cases:**
+- ✅ Erro da API
+- ✅ Confidence=0
+
+---
+
+### 🔵 Stripe Functions (43 testes) ⏳ 38% (3/8 funções)
+
+#### createStripeCheckoutSession.test.ts (10 cenários)
+```bash
+npm test -- createStripeCheckoutSession.test.ts
+```
+
+#### stripeWebhook.test.ts (25 cenários)
+Testa todos eventos webhook do Stripe
+```bash
+npm test -- stripeWebhook.test.ts
+```
+
+#### cancelReactivate.test.ts (8 cenários)
+```bash
+npm test -- cancelReactivate.test.ts
+```
+
+**Pendente:**
+- getStripeSubscriptionStatus
+- createStripeCustomerPortal
+- listStripeInvoices
+- updateStripeSubscription
+- handleStripeSubscriptionSchedule
+
+---
+
+### 🟠 PagSeguro Functions (12 testes) ⏳ 14% (1/7 funções)
+
+#### createPagSeguroSubscription.test.ts (12 cenários)
+```bash
+npm test -- createPagSeguroSubscription.test.ts
+```
+
+**Pendente:**
+- handlePagSeguroNotification
+- cancelPagSeguroSubscription
+- getPagSeguroTransactionStatus
+- generatePagSeguroBoleto
+- generatePagSeguroPix
+- processPagSeguroRefund
+
+---
+
+### Executar Todos Testes Sprint 3
+
+```bash
+# OCR apenas
+npm test -- src/__tests__/ocr
+
+# Stripe apenas
+npm test -- src/__tests__/stripe
+
+# PagSeguro apenas
+npm test -- src/__tests__/pagseguro
+
+# Todos
+npm test -- src/__tests__
 ```
 
 ---

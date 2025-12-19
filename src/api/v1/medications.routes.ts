@@ -9,7 +9,9 @@ import * as admin from 'firebase-admin';
 import { ApiError } from '../utils/api-error';
 
 const router = Router();
-const db = admin.firestore();
+
+// Get Firestore instance (lazy initialization)
+const getDb = () => admin.firestore();
 
 /**
  * POST /v1/medications
@@ -42,7 +44,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     // Verify patient ownership
-    const patientRef = db.collection('patients').doc(patientId);
+    const patientRef = getDb().collection('patients').doc(patientId);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
@@ -76,7 +78,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    const docRef = await db.collection('medications').add(medication);
+    const docRef = await getDb().collection('medications').add(medication);
 
     res.status(201).json({
       id: docRef.id,
@@ -98,7 +100,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const partnerId = (req as any).partnerId;
     const { patientId, status, limit = 50, offset = 0 } = req.query;
 
-    let query = db.collection('medications')
+    let query = getDb().collection('medications')
       .where('partnerId', '==', partnerId);
 
     if (patientId) {
@@ -143,7 +145,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const medicationRef = db.collection('medications').doc(id);
+    const medicationRef = getDb().collection('medications').doc(id);
     const medicationDoc = await medicationRef.get();
 
     if (!medicationDoc.exists) {
@@ -174,7 +176,7 @@ router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => 
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const medicationRef = db.collection('medications').doc(id);
+    const medicationRef = getDb().collection('medications').doc(id);
     const medicationDoc = await medicationRef.get();
 
     if (!medicationDoc.exists) {
@@ -232,7 +234,7 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const medicationRef = db.collection('medications').doc(id);
+    const medicationRef = getDb().collection('medications').doc(id);
     const medicationDoc = await medicationRef.get();
 
     if (!medicationDoc.exists) {
