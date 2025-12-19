@@ -177,5 +177,22 @@ describe("📝 Request Logger Middleware", () => {
         done();
       }, 10);
     });
+
+    it("deve logar no Firestore em produção", (done) => {
+      process.env.NODE_ENV = "production";
+
+      requestLogger(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      mockResponse.emit("finish");
+
+      setTimeout(() => {
+        expect(mockNext).toHaveBeenCalled();
+        done();
+      }, 10);
+    });
   });
 });

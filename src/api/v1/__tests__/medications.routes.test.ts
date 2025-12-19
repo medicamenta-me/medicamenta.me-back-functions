@@ -283,6 +283,16 @@ describe("💊 Medications Routes - Integration Tests", () => {
         expect(response.body.stockQuantity).toBe(60);
         expect(response.body.name).toBe("Aspirina"); // Unchanged
       });
+
+      it("deve lidar com body vazio (nenhum campo para atualizar)", async () => {
+        const response = await request(app)
+          .patch(`/v1/medications/${testMedicationId}`)
+          .send({});
+
+        expect(response.status).toBe(200);
+        // Apenas updatedAt deve ser modificado
+        expect(response.body).toHaveProperty("updatedAt");
+      });
     });
 
     describe("❌ Cenários Negativos", () => {

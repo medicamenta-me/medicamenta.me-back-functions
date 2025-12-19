@@ -318,5 +318,32 @@ describe("⏱️ Rate Limiter Middleware", () => {
         })
       );
     });
+
+    it("deve executar cleanup de registros antigos aleatoriamente", async () => {
+      // Criar registros expirados
+      const now = 1000000;
+      jest.spyOn(Date, "now").mockReturnValue(now);
+      
+      // Adicionar registro expirado manualmente
+      requestCounts.set("expired:key", {
+        count: 50,
+        resetTime: now - 10000, // Expirado há 10s
+      });
+
+      // Forçar Math.random para garantir cleanup (< 0.01)
+      jest.spyOn(Math, "random").mockReturnValue(0.005);
+
+      expect(requestCounts.has("expired:key")).toBe(true);
+
+      await rateLimiter(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Registro expirado deve ter sido removido
+      expect(requestCounts.has("expired:key")).toBe(false);
+      expect(mockNext).toHaveBeenCalledWith();
+    });
   });
 });

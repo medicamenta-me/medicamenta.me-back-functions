@@ -104,6 +104,19 @@ describe('🔔 Webhooks Routes - Integration Tests', () => {
         expect(response.body.error).toBeDefined();
       });
 
+      it('deve retornar 400 se events não é um array', async () => {
+        const response = await request(app)
+          .post('/v1/webhooks')
+          .send({ 
+            url: 'https://example.com/webhook',
+            events: 'patient.created' // String instead of array
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBeDefined();
+        expect(response.body.error.message).toContain('array');
+      });
+
       it('deve retornar 400 se URL é inválida', async () => {
         const response = await request(app)
           .post('/v1/webhooks')

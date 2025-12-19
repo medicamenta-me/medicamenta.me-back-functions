@@ -158,6 +158,29 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.period.endDate).toBeDefined();
       });
 
+      it('deve filtrar apenas por startDate (sem endDate)', async () => {
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 7);
+
+        const response = await request(app)
+          .get(`/v1/adherence/${testPatientId}?startDate=${startDate.toISOString()}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.period.startDate).toBeDefined();
+        expect(response.body.period.endDate).toBeNull();
+      });
+
+      it('deve filtrar apenas por endDate (sem startDate)', async () => {
+        const endDate = new Date();
+
+        const response = await request(app)
+          .get(`/v1/adherence/${testPatientId}?endDate=${endDate.toISOString()}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.period.startDate).toBeNull();
+        expect(response.body.period.endDate).toBeDefined();
+      });
+
       it('deve incluir breakdown por medicação', async () => {
         const response = await request(app)
           .get(`/v1/adherence/${testPatientId}`);
