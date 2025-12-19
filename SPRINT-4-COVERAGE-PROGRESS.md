@@ -10,20 +10,20 @@
 
 ### Métricas de Cobertura
 
-| Métrica | Sprint 3 | ApiError | API Gateway | Atual | Objetivo | Status |
-|---------|----------|----------|-------------|-------|----------|--------|
-| **Functions** | 75.00% | 80.40% | **84.45%** | **84.45%** | 80% | ✅ **+9.45%** |
-| **Statements** | 77.68% | 78.48% | **81.91%** | **81.91%** | 80% | ✅ **+4.23%** |
-| **Lines** | 77.76% | 78.13% | **81.62%** | **81.62%** | 80% | ✅ **+3.86%** |
-| **Branches** | 73.55% | 74.44% | **74.74%** | **74.74%** | 80% | 🟡 Faltam 5.26% |
+| Métrica | Sprint 3 | ApiError | API Gateway | Index Helpers | Atual | Objetivo | Status |
+|---------|----------|----------|-------------|---------------|-------|----------|--------|
+| **Functions** | 75.00% | 80.40% | 84.45% | **84.45%** | **84.45%** | 80% | ✅ **+9.45%** |
+| **Statements** | 77.68% | 78.48% | 81.91% | **81.91%** | **81.91%** | 80% | ✅ **+4.23%** |
+| **Lines** | 77.76% | 78.13% | 81.62% | **81.62%** | **81.62%** | 80% | ✅ **+3.86%** |
+| **Branches** | 73.55% | 74.44% | 74.74% | **74.74%** | **74.74%** | 80% | 🟡 Faltam 5.26% |
 
 ### Testes
 
-| Métrica | Sprint 3 | ApiError | API Gateway | Atual |
-|---------|----------|----------|-------------|-------|
-| **Test Suites** | 28 | 29 | **30** | **30** |
-| **Total Tests** | 351 | 389 | **414** | **414** |
-| **Pass Rate** | 100% | 100% | 100% | ✅ **100%** |
+| Métrica | Sprint 3 | ApiError | API Gateway | Index Helpers | Atual |
+|---------|----------|----------|-------------|---------------|-------|
+| **Test Suites** | 28 | 29 | 30 | **31** | **31** |
+| **Total Tests** | 351 | 389 | 414 | **432** | **432** |
+| **Pass Rate** | 100% | 100% | 100% | 100% | ✅ **100%** |
 
 ---
 
@@ -99,6 +99,34 @@
 - Lines: +3.49% (78.13% → 81.62%) ✅
 - Branches: +0.30% (74.44% → 74.74%)
 - **3 de 4 thresholds atingidos!** ✅✅✅
+
+---
+
+### 3. Index Helper Functions Tests (18 testes) ✅
+
+**Arquivo**: `src/__tests__/index.test.ts`  
+**Data**: 19/12/2025
+
+**Cenários Cobertos**:
+- ✅ getPriceId() - Mapeamento de Planos (5 testes)
+  * Premium Monthly/Yearly
+  * Family Monthly/Yearly
+  * Erro para plano inválido
+- ✅ getOrCreateCustomer() - Gestão de Clientes Stripe (11 testes)
+  * Positivos: Customer existente, criar novo, name vazio, metadata (4)
+  * Negativos: Erros Firestore e Stripe API (3)
+  * Edge Cases: Email vazio, data() null, caracteres especiais, timestamps (4)
+- ✅ Integration Scenarios (2 testes)
+  * Fluxo completo: criar customer
+  * Fluxo completo: customer existente
+
+**Cobertura**: Funções auxiliares do `src/index.ts`
+
+**Impacto**:
+- Total de testes: +18 (414 → 432)
+- Test Suites: +1 (30 → 31)
+- Pass Rate: 100% mantido ✅
+- Branches: Sem alteração (foco em validação comportamental)
 
 ---
 
