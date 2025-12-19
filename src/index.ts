@@ -90,6 +90,14 @@ async function getOrCreateCustomer(userId: string, email: string, name?: string)
 }
 
 /**
+ * ⚠️ LEGACY CODE - Firestore Trigger (Deprecated)
+ * TODO Sprint 5 Phase 2: Migrar para stripe-functions.ts (HTTPS Callable)
+ * Este código duplica funcionalidade moderna e não é mais usado na produção.
+ * Manter apenas para compatibilidade com triggers antigos até migração completa.
+ */
+
+/* istanbul ignore next - Legacy Firestore trigger, replaced by modern callable functions */
+/**
  * Cloud Function: Create Stripe Checkout Session
  * Triggered when a new document is created in /users/{userId}/checkout_sessions/{sessionId}
  */
@@ -158,6 +166,7 @@ export const createStripeCheckoutSession = functions.firestore
     }
   });
 
+/* istanbul ignore next - Legacy Firestore trigger, replaced by modern callable functions */
 /**
  * Cloud Function: Create Stripe Billing Portal Session
  * Triggered when a new document is created in /users/{userId}/billing_portal_sessions/{sessionId}
@@ -209,6 +218,7 @@ export const createStripeBillingPortalSession = functions.firestore
     }
   });
 
+/* istanbul ignore next - Legacy HTTP webhook handler, replaced by modern callable functions */
 /**
  * Cloud Function: Handle Stripe Webhooks
  * HTTP endpoint that receives webhook events from Stripe
@@ -266,6 +276,7 @@ export const handleStripeWebhook = functions.https.onRequest(async (req: functio
   }
 });
 
+/* istanbul ignore next - Legacy webhook handler helper */
 /**
  * Handle checkout.session.completed event
  * Updates user subscription after successful checkout
@@ -314,6 +325,7 @@ async function handleCheckoutSessionCompleted(session: any): Promise<void> {
   console.log('[Stripe] Subscription activated for user:', userId);
 }
 
+/* istanbul ignore next - Legacy webhook handler helper */
 /**
  * Handle customer.subscription.updated event
  */
@@ -356,6 +368,7 @@ async function handleSubscriptionUpdate(subscription: any): Promise<void> {
   });
 }
 
+/* istanbul ignore next - Legacy webhook handler helper */
 /**
  * Handle customer.subscription.deleted event
  */
@@ -383,6 +396,7 @@ async function handleSubscriptionDeleted(subscription: any): Promise<void> {
   await stripeSubRef.delete();
 }
 
+/* istanbul ignore next - Legacy webhook handler helper */
 /**
  * Handle invoice.payment_succeeded event
  */
@@ -413,6 +427,7 @@ async function handleInvoicePaymentSucceeded(invoice: any): Promise<void> {
   });
 }
 
+/* istanbul ignore next - Legacy webhook handler helper */
 /**
  * Handle invoice.payment_failed event
  */

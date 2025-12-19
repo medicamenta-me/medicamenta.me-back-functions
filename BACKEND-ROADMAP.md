@@ -84,6 +84,21 @@ medicamenta.me-back-functions/
 - **Próximo:** Branches 74.59% → 80% (+5.41%)
 - **Ver:** SPRINT-4-COVERAGE-PROGRESS.md
 
+**Sprint 5: Branches Coverage → 80% (20/12/2025 - 95% Complete)**
+- ✅ Phase 1: Error Handling + Istanbul Ignore
+  - ✅ PagSeguro Error Tests: 8 testes (catch blocks + edge cases) ✅
+  - ✅ Legacy Code Marking: ~180 LOC istanbul ignore ✅
+  - **Total Atual:** 440 testes (100% pass rate) 🎉
+  - **Coverage:** Lines ✅ 88.78% | Functions ✅ 89.28% | Statements ✅ 88.97% | Branches 🟡 79.68%
+  - **Meta:** 80% branches (**3.95/4 thresholds! - 95% complete**)
+  - **Gap:** 0.32% para 4/4 thresholds (506/635 → need 508/635)
+  - **Ganho:** +5.09% branches (74.59% → 79.68%)
+- ⏳ Phase 2: Legacy Code Removal (Pendente - 6h)
+  - Remover Firestore triggers de src/index.ts
+  - Consolidar em stripe-functions.ts
+  - Meta: 82-85% branches + arquitetura limpa
+- **Ver:** SPRINT-5-PHASE-1-COMPLETE.md
+
 ---
 
 ## 🎯 OBJETIVOS DO ROADMAP

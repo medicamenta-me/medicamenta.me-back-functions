@@ -45,7 +45,7 @@ describe('pagseguroNotification', () => {
   let mockUpdate: any;
 
   beforeAll(() => {
-    // Firebase Admin j� inicializado no setup.ts global
+    // Firebase Admin j� inicializado no setup.ts global
   });
 
   afterAll(() => {
@@ -530,6 +530,232 @@ describe('pagseguroNotification', () => {
           status: 'canceled'
         })
       );
+    });
+  });
+
+  // ==========================================
+  // ERROR HANDLING - NOVOS TESTES SPRINT 5
+  // ==========================================
+
+  describe('Error Handling - Catch Blocks', () => {
+    it('should handle Firestore update error in transaction notification', async () => {
+      const { req, res } = createMockReqRes({
+        notificationCode: 'NOTIF_ERROR',
+        notificationType: 'transaction'
+      });
+
+      const mockXmlResponse = '<xml>transaction</xml>';
+      mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
+
+      const mockParser = {
+        parseStringPromise: jest.fn().mockResolvedValue({
+          transaction: {
+            reference: ['ORDER123'],
+            code: ['TRX123'],
+            status: ['3'], // Paid
+            paymentMethod: {
+              type: ['1']
+            },
+            grossAmount: ['99.90'],
+            lastEventDate: ['2024-01-15T10:00:00']
+          }
+        })
+      };
+
+      (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
+
+      // Simular erro no Firestore update
+      mockUpdate.mockRejectedValueOnce(new Error('Firestore write failed'));
+
+      await pagseguroNotification(req as any, res as any);
+
+      // Deve retornar erro 500
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+    });
+
+    it('should handle XML parsing error in transaction notification', async () => {
+      const { req, res } = createMockReqRes({
+        notificationCode: 'NOTIF_XML_ERROR',
+        notificationType: 'transaction'
+      });
+
+      const mockXmlResponse = '<invalid>xml';
+      mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
+
+      const mockParser = {
+        parseStringPromise: jest.fn().mockRejectedValue(new Error('XML parsing failed'))
+      };
+
+      (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
+
+      await pagseguroNotification(req as any, res as any);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+    });
+
+    it('should handle network error when fetching notification from PagSeguro', async () => {
+      const { req, res } = createMockReqRes({
+        notificationCode: 'NOTIF_NETWORK_ERROR',
+        notificationType: 'transaction'
+      });
+
+      // Simular erro de rede
+      mockedAxios.get.mockRejectedValue(new Error('Network timeout'));
+
+      await pagseguroNotification(req as any, res as any);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+    });
+
+    it('should handle Firestore update error in preApproval notification', async () => {
+      const { req, res } = createMockReqRes({
+        notificationCode: 'NOTIF_PREAPPROVAL_ERROR',
+        notificationType: 'preApproval'
+      });
+
+      const mockXmlResponse = '<xml>preapproval</xml>';
+      mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
+
+      const mockParser = {
+        parseStringPromise: jest.fn().mockResolvedValue({
+          preApproval: {
+            reference: ['SUB_ERROR'],
+            code: ['CODE_ERROR'],
+            status: ['ACTIVE'],
+            lastEventDate: ['2024-01-15T10:00:00']
+          }
+        })
+      };
+
+      (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
+
+      // Simular erro no Firestore update
+      mockUpdate.mockRejectedValueOnce(new Error('Firestore connection lost'));
+
+      await pagseguroNotification(req as any, res as any);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+    });
+
+    it('should handle unknown status code in status mapping', async () => {
+      const { req, res } = createMockReqRes({
+        notificationCode: 'NOTIF_UNKNOWN_STATUS',
+        notificationType: 'preApproval'
+      });
+
+      const mockXmlResponse = '<xml>preapproval</xml>';
+      mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
+
+      const mockParser = {
+        parseStringPromise: jest.fn().mockResolvedValue({
+          preApproval: {
+            reference: ['SUB_UNKNOWN'],
+            code: ['CODE_UNKNOWN'],
+            status: ['UNKNOWN_STATUS'], // Status não mapeado
+            lastEventDate: ['2024-01-15T10:00:00']
+          }
+        })
+      };
+
+      (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
+
+      await pagseguroNotification(req as any, res as any);
+
+      // Deve usar status padrão 'active' para status desconhecido
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'active' // Default mapping
+        })
+      );
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('should handle empty notification response from PagSeguro', async () => {
+      const { req, res } = createMockReqRes({
+        notificationCode: 'NOTIF_EMPTY',
+        notificationType: 'transaction'
+      });
+
+      mockedAxios.get.mockResolvedValue({ data: '' });
+
+      const mockParser = {
+        parseStringPromise: jest.fn().mockRejectedValue(new Error('Empty response'))
+      };
+
+      (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
+
+      await pagseguroNotification(req as any, res as any);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+    });
+
+    it('should handle malformed transaction data structure', async () => {
+      const { req, res } = createMockReqRes({
+        notificationCode: 'NOTIF_MALFORMED',
+        notificationType: 'transaction'
+      });
+
+      const mockXmlResponse = '<xml>transaction</xml>';
+      mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
+
+      const mockParser = {
+        parseStringPromise: jest.fn().mockResolvedValue({
+          transaction: {
+            // Missing required fields: reference, code, status
+            paymentMethod: {
+              type: ['1']
+            }
+          }
+        })
+      };
+
+      (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
+
+      await pagseguroNotification(req as any, res as any);
+
+      // Deve lançar erro ao tentar acessar campos undefined
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+    });
+
+    it('should handle concurrent Firestore updates gracefully', async () => {
+      const { req, res } = createMockReqRes({
+        notificationCode: 'NOTIF_CONCURRENT',
+        notificationType: 'transaction'
+      });
+
+      const mockXmlResponse = '<xml>transaction</xml>';
+      mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
+
+      const mockParser = {
+        parseStringPromise: jest.fn().mockResolvedValue({
+          transaction: {
+            reference: ['ORDER_CONCURRENT'],
+            code: ['TRX_CONCURRENT'],
+            status: ['3'],
+            paymentMethod: {
+              type: ['1']
+            },
+            grossAmount: ['99.90'],
+            lastEventDate: ['2024-01-15T10:00:00']
+          }
+        })
+      };
+
+      (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
+
+      // Simular erro de concorrência (conflict)
+      mockUpdate.mockRejectedValueOnce(new Error('Document update conflict'));
+
+      await pagseguroNotification(req as any, res as any);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.send).toHaveBeenCalledWith('Error processing notification');
     });
   });
 });

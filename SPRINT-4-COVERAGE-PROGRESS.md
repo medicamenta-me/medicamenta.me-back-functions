@@ -246,13 +246,14 @@ Similar a Statements.
 
 ## 📊 Histórico de Progresso
 
-| Data | Testes | Coverage (Lines) | Milestone |
+| Data | Tests | Coverage | Milestone |
 |------|--------|------------------|-----------|
 | 16/12/2025 | 351 | 77.76% | Sprint 3 Completo |
 | 19/12/2025 (AM) | 389 | 78.13% | ApiError 100% |
 | 19/12/2025 (Noon) | 414 | 81.62% | API Gateway 100% |
 | 19/12/2025 (PM) | 432 | 81.54% | Index Helpers + **87.5% Sprint Complete** 🎉 |
-| TBD (Sprint 5) | ~460 | ~82% | 80% Branches (4/4 thresholds) ✅ |
+| **20/12/2025** | **440** | **88.78%** | **Sprint 5 Phase 1** - 79.68% branches (95% complete) 🎉 |
+| TBD (Sprint 5 Phase 2) | ~440+ | ~82-85% | 80%+ Branches (4/4 thresholds) ✅ |
 | TBD | ~550 | 100% | Objetivo Final |
 
 ---
