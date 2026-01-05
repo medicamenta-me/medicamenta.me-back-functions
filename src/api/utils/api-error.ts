@@ -16,7 +16,7 @@ export class ApiError extends Error {
     details?: any
   ) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.statusCode = statusCode;
     this.code = code;
     this.details = details;
@@ -42,29 +42,29 @@ export class ApiError extends Error {
  * Common API Errors
  */
 export const ApiErrors = {
-  UNAUTHORIZED: (message = 'Unauthorized') =>
-    new ApiError(401, 'UNAUTHORIZED', message),
+  UNAUTHORIZED: (message = "Unauthorized") =>
+    new ApiError(401, "UNAUTHORIZED", message),
 
-  FORBIDDEN: (message = 'Forbidden') =>
-    new ApiError(403, 'FORBIDDEN', message),
+  FORBIDDEN: (message = "Forbidden") =>
+    new ApiError(403, "FORBIDDEN", message),
 
   NOT_FOUND: (resource: string) =>
-    new ApiError(404, 'NOT_FOUND', `${resource} not found`),
+    new ApiError(404, "NOT_FOUND", `${resource} not found`),
 
   VALIDATION_ERROR: (details: any) =>
-    new ApiError(400, 'VALIDATION_ERROR', 'Validation failed', details),
+    new ApiError(400, "VALIDATION_ERROR", "Validation failed", details),
 
   RATE_LIMIT_EXCEEDED: (retryAfter: number) =>
     new ApiError(
       429,
-      'RATE_LIMIT_EXCEEDED',
-      'Too many requests',
+      "RATE_LIMIT_EXCEEDED",
+      "Too many requests",
       { retryAfter }
     ),
 
-  INTERNAL_ERROR: (message = 'Internal server error') =>
-    new ApiError(500, 'INTERNAL_ERROR', message),
+  INTERNAL_ERROR: (message = "Internal server error") =>
+    new ApiError(500, "INTERNAL_ERROR", message),
 
-  SERVICE_UNAVAILABLE: (message = 'Service temporarily unavailable') =>
-    new ApiError(503, 'SERVICE_UNAVAILABLE', message),
+  SERVICE_UNAVAILABLE: (message = "Service temporarily unavailable") =>
+    new ApiError(503, "SERVICE_UNAVAILABLE", message),
 };

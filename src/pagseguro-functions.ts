@@ -1,21 +1,21 @@
-import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
-import axios from 'axios';
-import * as xml2js from 'xml2js';
+import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
+import axios from "axios";
+import * as xml2js from "xml2js";
 
 // PagSeguro API Configuration
 const PAGSEGURO_CONFIG = {
   sandbox: {
-    apiUrl: 'https://ws.sandbox.pagseguro.uol.com.br',
-    checkoutUrl: 'https://sandbox.pagseguro.uol.com.br',
+    apiUrl: "https://ws.sandbox.pagseguro.uol.com.br",
+    checkoutUrl: "https://sandbox.pagseguro.uol.com.br",
   },
   production: {
-    apiUrl: 'https://ws.pagseguro.uol.com.br',
-    checkoutUrl: 'https://pagseguro.uol.com.br',
+    apiUrl: "https://ws.pagseguro.uol.com.br",
+    checkoutUrl: "https://pagseguro.uol.com.br",
   },
 };
 
-const isProd = (process.env.PAGSEGURO_ENVIRONMENT || functions.config()?.pagseguro?.environment) === 'production';
+const isProd = (process.env.PAGSEGURO_ENVIRONMENT || functions.config()?.pagseguro?.environment) === "production";
 const API_URL = isProd ? PAGSEGURO_CONFIG.production.apiUrl : PAGSEGURO_CONFIG.sandbox.apiUrl;
 const CHECKOUT_URL = isProd
   ? PAGSEGURO_CONFIG.production.checkoutUrl
@@ -29,8 +29,8 @@ export const createPagSeguroSubscription = functions.https.onCall(
     try {
       if (!context.auth) {
         throw new functions.https.HttpsError(
-          'unauthenticated',
-          'User must be authenticated'
+          "unauthenticated",
+          "User must be authenticated"
         );
       }
 
@@ -38,8 +38,8 @@ export const createPagSeguroSubscription = functions.https.onCall(
 
       if (!planCode || !userId || !plan || !customer) {
         throw new functions.https.HttpsError(
-          'invalid-argument',
-          'Missing required fields'
+          "invalid-argument",
+          "Missing required fields"
         );
       }
 
@@ -55,7 +55,7 @@ export const createPagSeguroSubscription = functions.https.onCall(
         subscriptionXml,
         {
           headers: {
-            'Content-Type': 'application/xml; charset=UTF-8',
+            "Content-Type": "application/xml; charset=UTF-8",
           },
         }
       );
@@ -69,7 +69,7 @@ export const createPagSeguroSubscription = functions.https.onCall(
       // Save subscription to Firestore
       await admin
         .firestore()
-        .collection('subscriptions')
+        .collection("subscriptions")
         .doc(userId)
         .set(
           {
@@ -77,7 +77,7 @@ export const createPagSeguroSubscription = functions.https.onCall(
             plan,
             billingCycle,
             pagseguroCode: code,
-            status: 'pending',
+            status: "pending",
             createdAt: new Date().toISOString(),
             lastUpdated: new Date().toISOString(),
           },
@@ -89,9 +89,9 @@ export const createPagSeguroSubscription = functions.https.onCall(
         checkoutUrl: `${CHECKOUT_URL}/v2/pre-approvals/request.html?code=${code}`,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error creating PagSeguro subscription:', error);
-      throw new functions.https.HttpsError('internal', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Error creating PagSeguro subscription:", error);
+      throw new functions.https.HttpsError("internal", errorMessage);
     }
   }
 );
@@ -125,7 +125,7 @@ export const pagseguroNotification = functions.https.onRequest(async (req, res) 
     const notificationType = req.body.notificationType || req.query.notificationType;
 
     if (!notificationCode || !notificationType) {
-      res.status(400).send('Missing notification parameters');
+      res.status(400).send("Missing notification parameters");
       return;
     }
 
@@ -133,13 +133,13 @@ export const pagseguroNotification = functions.https.onRequest(async (req, res) 
     const token = process.env.PAGSEGURO_TOKEN || functions.config()?.pagseguro?.token;
 
     // Get notification details from PagSeguro
-    let apiEndpoint = '';
-    if (notificationType === 'preApproval') {
+    let apiEndpoint = "";
+    if (notificationType === "preApproval") {
       apiEndpoint = `${API_URL}/v2/pre-approvals/notifications/${notificationCode}`;
-    } else if (notificationType === 'transaction') {
+    } else if (notificationType === "transaction") {
       apiEndpoint = `${API_URL}/v3/transactions/notifications/${notificationCode}`;
     } else {
-      res.status(400).send('Unknown notification type');
+      res.status(400).send("Unknown notification type");
       return;
     }
 
@@ -149,16 +149,16 @@ export const pagseguroNotification = functions.https.onRequest(async (req, res) 
     const parser = new xml2js.Parser();
     const result = await parser.parseStringPromise(response.data);
 
-    if (notificationType === 'preApproval') {
+    if (notificationType === "preApproval") {
       await handlePreApprovalNotification(result);
-    } else if (notificationType === 'transaction') {
+    } else if (notificationType === "transaction") {
       await handleTransactionNotification(result);
     }
 
-    res.status(200).send('OK');
+    res.status(200).send("OK");
   } catch (error) {
-    console.error('Error processing PagSeguro notification:', error);
-    res.status(500).send('Error processing notification');
+    console.error("Error processing PagSeguro notification:", error);
+    res.status(500).send("Error processing notification");
   }
 });
 
@@ -178,7 +178,7 @@ async function handlePreApprovalNotification(data: any) {
     // Update subscription in Firestore
     await admin
       .firestore()
-      .collection('subscriptions')
+      .collection("subscriptions")
       .doc(reference)
       .update({
         pagseguroCode: code,
@@ -188,19 +188,19 @@ async function handlePreApprovalNotification(data: any) {
       });
 
     // If canceled, downgrade to free plan
-    if (status === 'CANCELLED') {
+    if (status === "CANCELLED") {
       await admin
         .firestore()
-        .collection('subscriptions')
+        .collection("subscriptions")
         .doc(reference)
         .update({
-          plan: 'free',
+          plan: "free",
         });
     }
 
     console.log(`✅ PagSeguro subscription updated: ${reference}, status: ${mappedStatus}`);
   } catch (error) {
-    console.error('Error handling pre-approval notification:', error);
+    console.error("Error handling pre-approval notification:", error);
     throw error;
   }
 }
@@ -223,35 +223,35 @@ async function handleTransactionNotification(data: any) {
     // 6: Devolvida
     // 7: Cancelada
 
-    if (status === '3' || status === '4') {
+    if (status === "3" || status === "4") {
       // Payment successful - reset usage counters
       await admin
         .firestore()
-        .collection('subscriptions')
+        .collection("subscriptions")
         .doc(reference)
         .update({
-          'currentUsage.reportsGenerated': 0,
-          'currentUsage.ocrScansUsed': 0,
-          'currentUsage.telehealthConsultsUsed': 0,
+          "currentUsage.reportsGenerated": 0,
+          "currentUsage.ocrScansUsed": 0,
+          "currentUsage.telehealthConsultsUsed": 0,
           lastPaymentDate: new Date().toISOString(),
           lastPaymentAmount: parseFloat(transaction.grossAmount[0]),
         });
 
       console.log(`✅ Payment successful for subscription: ${reference}`);
-    } else if (status === '7') {
+    } else if (status === "7") {
       // Payment canceled
       await admin
         .firestore()
-        .collection('subscriptions')
+        .collection("subscriptions")
         .doc(reference)
         .update({
-          status: 'past_due',
+          status: "past_due",
         });
 
       console.log(`❌ Payment failed for subscription: ${reference}`);
     }
   } catch (error) {
-    console.error('Error handling transaction notification:', error);
+    console.error("Error handling transaction notification:", error);
     throw error;
   }
 }
@@ -261,17 +261,17 @@ async function handleTransactionNotification(data: any) {
  */
 function mapPagSeguroStatus(
   pagseguroStatus: string
-): 'active' | 'past_due' | 'canceled' | 'trial' {
+): "active" | "past_due" | "canceled" | "trial" {
   switch (pagseguroStatus) {
-    case 'ACTIVE':
-      return 'active';
-    case 'SUSPENDED':
-      return 'past_due';
-    case 'CANCELLED':
-    case 'EXPIRED':
-      return 'canceled';
-    default:
-      return 'active';
+  case "ACTIVE":
+    return "active";
+  case "SUSPENDED":
+    return "past_due";
+  case "CANCELLED":
+  case "EXPIRED":
+    return "canceled";
+  default:
+    return "active";
   }
 }
 
@@ -281,13 +281,13 @@ function mapPagSeguroStatus(
 export const getPagSeguroSubscriptionStatus = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
 
     const { subscriptionCode } = data;
 
     if (!subscriptionCode) {
-      throw new functions.https.HttpsError('invalid-argument', 'Missing subscriptionCode');
+      throw new functions.https.HttpsError("invalid-argument", "Missing subscriptionCode");
     }
 
     try {
@@ -310,9 +310,9 @@ export const getPagSeguroSubscriptionStatus = functions.https.onCall(
         charge: preApproval.charge[0],
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error getting PagSeguro subscription status:', error);
-      throw new functions.https.HttpsError('internal', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Error getting PagSeguro subscription status:", error);
+      throw new functions.https.HttpsError("internal", errorMessage);
     }
   }
 );
@@ -323,13 +323,13 @@ export const getPagSeguroSubscriptionStatus = functions.https.onCall(
 export const cancelPagSeguroSubscription = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
 
     const { subscriptionCode } = data;
 
     if (!subscriptionCode) {
-      throw new functions.https.HttpsError('invalid-argument', 'Missing subscriptionCode');
+      throw new functions.https.HttpsError("invalid-argument", "Missing subscriptionCode");
     }
 
     try {
@@ -340,11 +340,11 @@ export const cancelPagSeguroSubscription = functions.https.onCall(
         `${API_URL}/v2/pre-approvals/${subscriptionCode}/cancel?email=${email}&token=${token}`
       );
 
-      return { success: true, message: 'Subscription canceled' };
+      return { success: true, message: "Subscription canceled" };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error canceling PagSeguro subscription:', error);
-      throw new functions.https.HttpsError('internal', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Error canceling PagSeguro subscription:", error);
+      throw new functions.https.HttpsError("internal", errorMessage);
     }
   }
 );
@@ -355,13 +355,13 @@ export const cancelPagSeguroSubscription = functions.https.onCall(
 export const suspendPagSeguroSubscription = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
 
     const { subscriptionCode } = data;
 
     if (!subscriptionCode) {
-      throw new functions.https.HttpsError('invalid-argument', 'Missing subscriptionCode');
+      throw new functions.https.HttpsError("invalid-argument", "Missing subscriptionCode");
     }
 
     try {
@@ -372,11 +372,11 @@ export const suspendPagSeguroSubscription = functions.https.onCall(
         `${API_URL}/v2/pre-approvals/${subscriptionCode}/suspend?email=${email}&token=${token}`
       );
 
-      return { success: true, message: 'Subscription suspended' };
+      return { success: true, message: "Subscription suspended" };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error suspending PagSeguro subscription:', error);
-      throw new functions.https.HttpsError('internal', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Error suspending PagSeguro subscription:", error);
+      throw new functions.https.HttpsError("internal", errorMessage);
     }
   }
 );
@@ -387,13 +387,13 @@ export const suspendPagSeguroSubscription = functions.https.onCall(
 export const reactivatePagSeguroSubscription = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
 
     const { subscriptionCode } = data;
 
     if (!subscriptionCode) {
-      throw new functions.https.HttpsError('invalid-argument', 'Missing subscriptionCode');
+      throw new functions.https.HttpsError("invalid-argument", "Missing subscriptionCode");
     }
 
     try {
@@ -404,11 +404,11 @@ export const reactivatePagSeguroSubscription = functions.https.onCall(
         `${API_URL}/v2/pre-approvals/${subscriptionCode}/reactivate?email=${email}&token=${token}`
       );
 
-      return { success: true, message: 'Subscription reactivated' };
+      return { success: true, message: "Subscription reactivated" };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error reactivating PagSeguro subscription:', error);
-      throw new functions.https.HttpsError('internal', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Error reactivating PagSeguro subscription:", error);
+      throw new functions.https.HttpsError("internal", errorMessage);
     }
   }
 );
@@ -419,13 +419,13 @@ export const reactivatePagSeguroSubscription = functions.https.onCall(
 export const getPagSeguroTransactionHistory = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
 
     const { email: customerEmail, days = 30 } = data;
 
     if (!customerEmail) {
-      throw new functions.https.HttpsError('invalid-argument', 'Missing email');
+      throw new functions.https.HttpsError("invalid-argument", "Missing email");
     }
 
     try {
@@ -436,9 +436,9 @@ export const getPagSeguroTransactionHistory = functions.https.onCall(
       initialDate.setDate(initialDate.getDate() - days);
       const finalDate = new Date();
 
-      const response = await axios.get(
-        `${API_URL}/v2/transactions?email=${email}&token=${token}&initialDate=${initialDate.toISOString()}&finalDate=${finalDate.toISOString()}`
-      );
+      const url = `${API_URL}/v2/transactions?email=${email}&token=${token}` +
+        `&initialDate=${initialDate.toISOString()}&finalDate=${finalDate.toISOString()}`;
+      const response = await axios.get(url);
 
       const parser = new xml2js.Parser();
       const result = await parser.parseStringPromise(response.data);
@@ -462,9 +462,9 @@ export const getPagSeguroTransactionHistory = functions.https.onCall(
         })),
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error getting PagSeguro transaction history:', error);
-      throw new functions.https.HttpsError('internal', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.error("Error getting PagSeguro transaction history:", error);
+      throw new functions.https.HttpsError("internal", errorMessage);
     }
   }
 );

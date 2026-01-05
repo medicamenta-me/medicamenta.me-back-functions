@@ -1,6 +1,6 @@
 /**
  * 🧪 Auth Routes Tests - Integration Tests
- * Testes de integração sem mocks - usando Firestore real ou em memória
+ * Testes de integração usando mocks do Firestore
  */
 
 import * as admin from "firebase-admin";
@@ -8,38 +8,30 @@ import request from "supertest";
 import express, { Express } from "express";
 import { authRouter } from "../auth.routes";
 import { errorHandler } from "../../middleware/error-handler";
+import { clearMockData } from "../../../__tests__/setup";
 
-// Firebase Admin já inicializado no setup.ts global
+// Firebase Admin mockado no setup.ts global
 const db = admin.firestore();
 
 describe("🔐 Auth Routes - Integration Tests", () => {
   let app: Express;
-  const testPartnerId = "test-partner-" + Date.now();
+  const testPartnerId = "test-partner-auth-" + Date.now();
   const testClientSecret = "test-secret-123";
 
   beforeAll(async () => {
-    // Criar partner de teste no Firestore
+    // Criar partner de teste no Firestore mock
     await db.collection("partners").doc(testPartnerId).set({
       clientSecret: testClientSecret,
       status: "active",
       permissions: ["read", "write"],
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: new Date().toISOString(),
     });
-  }, 30000); // Timeout de 30s para inicialização
+  });
 
   afterAll(async () => {
     // Limpar dados de teste
-    await db.collection("partners").doc(testPartnerId).delete();
-    
-    // Limpar tokens criados durante os testes
-    const tokensSnapshot = await db
-      .collection("refresh_tokens")
-      .where("partnerId", "==", testPartnerId)
-      .get();
-    
-    const deletePromises = tokensSnapshot.docs.map((doc) => doc.ref.delete());
-    await Promise.all(deletePromises);
-  }, 30000); // Timeout de 30s para limpeza
+    clearMockData();
+  });
 
   beforeEach(() => {
     app = express();
@@ -227,8 +219,8 @@ describe("🔐 Auth Routes - Integration Tests", () => {
           await new Promise(resolve => setTimeout(resolve, 100));
           
           const tokenQuery = await admin.firestore()
-            .collection('refresh_tokens')
-            .where('token', '==', refreshToken)
+            .collection("refresh_tokens")
+            .where("token", "==", refreshToken)
             .limit(1)
             .get();
           

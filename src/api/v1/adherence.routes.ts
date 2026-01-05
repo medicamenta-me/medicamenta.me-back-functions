@@ -4,9 +4,9 @@
  * Endpoints for medication adherence tracking
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
-import { ApiError } from '../utils/api-error';
+import { Router, Request, Response, NextFunction } from "express";
+import * as admin from "firebase-admin";
+import { ApiError } from "../utils/api-error";
 
 const router = Router();
 const getDb = () => admin.firestore();
@@ -15,38 +15,38 @@ const getDb = () => admin.firestore();
  * GET /v1/adherence/:patientId
  * Get adherence rate for a patient
  */
-router.get('/:patientId', async (req: Request, res: Response, next: NextFunction) => {
+router.get("/:patientId", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { patientId } = req.params;
     const { startDate, endDate, medicationId } = req.query;
 
     // Verify patient ownership
-    const patientRef = getDb().collection('patients').doc(patientId);
+    const patientRef = getDb().collection("patients").doc(patientId);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Patient not found');
+      throw new ApiError(404, "NOT_FOUND", "Patient not found");
     }
 
     if (patientDoc.data()!.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied');
+      throw new ApiError(403, "FORBIDDEN", "Access denied");
     }
 
     // Query dose history
-    let query = getDb().collection('dose_history')
-      .where('patientId', '==', patientId);
+    let query = getDb().collection("dose_history")
+      .where("patientId", "==", patientId);
 
     if (medicationId) {
-      query = query.where('medicationId', '==', medicationId);
+      query = query.where("medicationId", "==", medicationId);
     }
 
     if (startDate) {
-      query = query.where('scheduledTime', '>=', new Date(String(startDate)));
+      query = query.where("scheduledTime", ">=", new Date(String(startDate)));
     }
 
     if (endDate) {
-      query = query.where('scheduledTime', '<=', new Date(String(endDate)));
+      query = query.where("scheduledTime", "<=", new Date(String(endDate)));
     }
 
     const snapshot = await query.get();
@@ -55,10 +55,10 @@ router.get('/:patientId', async (req: Request, res: Response, next: NextFunction
 
     // Calculate adherence metrics
     const total = doses.length;
-    const taken = doses.filter(d => d.status === 'taken').length;
-    const missed = doses.filter(d => d.status === 'missed').length;
-    const skipped = doses.filter(d => d.status === 'skipped').length;
-    const pending = doses.filter(d => d.status === 'pending').length;
+    const taken = doses.filter(d => d.status === "taken").length;
+    const missed = doses.filter(d => d.status === "missed").length;
+    const skipped = doses.filter(d => d.status === "skipped").length;
+    const pending = doses.filter(d => d.status === "pending").length;
 
     const adherenceRate = total > 0 ? (taken / total) * 100 : 0;
 
@@ -87,37 +87,37 @@ router.get('/:patientId', async (req: Request, res: Response, next: NextFunction
  * GET /v1/adherence/:patientId/history
  * Get dose history for a patient
  */
-router.get('/:patientId/history', async (req: Request, res: Response, next: NextFunction) => {
+router.get("/:patientId/history", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { patientId } = req.params;
     const { limit = 100, offset = 0, status, medicationId } = req.query;
 
     // Verify patient ownership
-    const patientRef = getDb().collection('patients').doc(patientId);
+    const patientRef = getDb().collection("patients").doc(patientId);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Patient not found');
+      throw new ApiError(404, "NOT_FOUND", "Patient not found");
     }
 
     if (patientDoc.data()!.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied');
+      throw new ApiError(403, "FORBIDDEN", "Access denied");
     }
 
-    let query = getDb().collection('dose_history')
-      .where('patientId', '==', patientId);
+    let query = getDb().collection("dose_history")
+      .where("patientId", "==", patientId);
 
     if (status) {
-      query = query.where('status', '==', status);
+      query = query.where("status", "==", status);
     }
 
     if (medicationId) {
-      query = query.where('medicationId', '==', medicationId);
+      query = query.where("medicationId", "==", medicationId);
     }
 
     query = query
-      .orderBy('scheduledTime', 'desc')
+      .orderBy("scheduledTime", "desc")
       .limit(Number(limit))
       .offset(Number(offset));
 
@@ -145,7 +145,7 @@ router.get('/:patientId/history', async (req: Request, res: Response, next: Next
  * POST /v1/adherence/confirm
  * Confirm dose taken
  */
-router.post('/confirm', async (req: Request, res: Response, next: NextFunction) => {
+router.post("/confirm", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { patientId, medicationId, scheduledTime, takenAt, notes } = req.body;
@@ -153,33 +153,33 @@ router.post('/confirm', async (req: Request, res: Response, next: NextFunction) 
     if (!patientId || !medicationId || !scheduledTime) {
       throw new ApiError(
         400,
-        'VALIDATION_ERROR',
-        'patientId, medicationId, and scheduledTime are required'
+        "VALIDATION_ERROR",
+        "patientId, medicationId, and scheduledTime are required"
       );
     }
 
     // Verify patient ownership
-    const patientRef = getDb().collection('patients').doc(patientId);
+    const patientRef = getDb().collection("patients").doc(patientId);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Patient not found');
+      throw new ApiError(404, "NOT_FOUND", "Patient not found");
     }
 
     if (patientDoc.data()!.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied');
+      throw new ApiError(403, "FORBIDDEN", "Access denied");
     }
 
     // Verify medication ownership
-    const medicationRef = getDb().collection('medications').doc(medicationId);
+    const medicationRef = getDb().collection("medications").doc(medicationId);
     const medicationDoc = await medicationRef.get();
 
     if (!medicationDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Medication not found');
+      throw new ApiError(404, "NOT_FOUND", "Medication not found");
     }
 
     if (medicationDoc.data()!.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied');
+      throw new ApiError(403, "FORBIDDEN", "Access denied");
     }
 
     // Record dose
@@ -190,13 +190,13 @@ router.post('/confirm', async (req: Request, res: Response, next: NextFunction) 
       dosage: medicationDoc.data()!.dosage,
       scheduledTime: new Date(scheduledTime),
       takenAt: takenAt ? new Date(takenAt) : admin.firestore.FieldValue.serverTimestamp(),
-      status: 'taken',
+      status: "taken",
       notes: notes || null,
-      source: 'api',
+      source: "api",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    const docRef = await getDb().collection('dose_history').add(doseRecord);
+    const docRef = await getDb().collection("dose_history").add(doseRecord);
 
     // Update medication stats
     await medicationRef.update({
@@ -223,23 +223,23 @@ async function getAdherenceByMedication(
   patientId: string,
   partnerId: string
 ): Promise<any[]> {
-  const medicationsSnapshot = await getDb().collection('medications')
-    .where('patientId', '==', patientId)
-    .where('partnerId', '==', partnerId)
-    .where('status', '==', 'active')
+  const medicationsSnapshot = await getDb().collection("medications")
+    .where("patientId", "==", patientId)
+    .where("partnerId", "==", partnerId)
+    .where("status", "==", "active")
     .get();
 
   const results = await Promise.all(
     medicationsSnapshot.docs.map(async (medicationDoc) => {
       const medication = medicationDoc.data();
       
-      const doseSnapshot = await getDb().collection('dose_history')
-        .where('medicationId', '==', medicationDoc.id)
+      const doseSnapshot = await getDb().collection("dose_history")
+        .where("medicationId", "==", medicationDoc.id)
         .get();
 
       const doses = doseSnapshot.docs.map(d => d.data());
       const total = doses.length;
-      const taken = doses.filter(d => d.status === 'taken').length;
+      const taken = doses.filter(d => d.status === "taken").length;
       const adherenceRate = total > 0 ? (taken / total) * 100 : 0;
 
       return {

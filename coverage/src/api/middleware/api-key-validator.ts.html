@@ -30,9 +30,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">89.47% </span>
+                <span class="strong">94.73% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>17/19</span>
+                <span class='fraction'>18/19</span>
             </div>
         
             
@@ -515,9 +515,9 @@
  * Valida API Keys e adiciona informações do parceiro à request
  */
 &nbsp;
-import { Request, Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
-import { ApiError } from '../utils/api-error';
+import { Request, Response, NextFunction } from "express";
+import * as admin from "firebase-admin";
+import { ApiError } from "../utils/api-error";
 &nbsp;
 const db = admin.firestore();
 &nbsp;
@@ -526,9 +526,9 @@ interface ApiKey {
   partnerId: string;
   name: string;
   key: string;
-  tier: 'free' | 'starter' | 'professional' | 'business' | 'enterprise';
+  tier: "free" | "starter" | "professional" | "business" | "enterprise";
   permissions: string[];
-  status: 'active' | 'suspended' | 'revoked';
+  status: "active" | "suspended" | "revoked";
   rateLimit: {
     requestsPerMinute: number;
     requestsPerDay: number;
@@ -554,13 +554,13 @@ export async function validateApiKey(
   next: NextFunction
 ): Promise&lt;void&gt; {
   try {
-    const apiKeyHeader = req.headers['x-api-key'] as string;
+    const apiKeyHeader = req.headers["x-api-key"] as string;
 &nbsp;
     if (!apiKeyHeader) {
       throw new ApiError(
         401,
-        'MISSING_API_KEY',
-        'API key is required. Provide it in X-API-Key header'
+        "MISSING_API_KEY",
+        "API key is required. Provide it in X-API-Key header"
       );
     }
 &nbsp;
@@ -572,14 +572,14 @@ export async function validateApiKey(
     }
 &nbsp;
     // Query Firestore
-    const apiKeysRef = db.collection('api_keys');
+    const apiKeysRef = db.collection("api_keys");
     const snapshot = await apiKeysRef
-      .where('key', '==', apiKeyHeader)
+      .where("key", "==", apiKeyHeader)
       .limit(1)
       .get();
 &nbsp;
     if (snapshot.empty) {
-      throw new ApiError(401, 'INVALID_API_KEY', 'Invalid API key');
+      throw new ApiError(401, "INVALID_API_KEY", "Invalid API key");
     }
 &nbsp;
     const apiKeyDoc = snapshot.docs[0];
@@ -589,17 +589,17 @@ export async function validateApiKey(
     } as ApiKey;
 &nbsp;
     // Validate status
-    if (apiKey.status !== 'active') {
+    if (apiKey.status !== "active") {
       throw new ApiError(
         403,
-        'API_KEY_INACTIVE',
+        "API_KEY_INACTIVE",
         `API key is ${apiKey.status}`
       );
     }
 &nbsp;
     // Validate expiration
     if (apiKey.expiresAt &amp;&amp; apiKey.expiresAt.getTime() &lt; Date.now()) {
-      throw new ApiError(401, 'API_KEY_EXPIRED', 'API key has expired');
+      throw new ApiError(401, "API_KEY_EXPIRED", "API key has expired");
     }
 &nbsp;
     // Update usage stats (async, don't wait)
@@ -634,11 +634,11 @@ function attachApiKeyInfo(req: Request, apiKey: ApiKey): void {
  * Update API key usage statistics
  */
 async function updateApiKeyUsage(apiKeyId: string): Promise&lt;void&gt; {
-  const apiKeyRef = db.collection('api_keys').doc(apiKeyId);
+  const apiKeyRef = db.collection("api_keys").doc(apiKeyId);
   
   await apiKeyRef.update({
-    'usage.totalRequests': admin.firestore.FieldValue.increment(1),
-    'usage.lastUsed': admin.firestore.FieldValue.serverTimestamp(),
+    "usage.totalRequests": admin.firestore.FieldValue.increment(1),
+    "usage.lastUsed": admin.firestore.FieldValue.serverTimestamp(),
   });
 }
 &nbsp;
@@ -648,19 +648,19 @@ async function updateApiKeyUsage(apiKeyId: string): Promise&lt;void&gt; {
 export async function generateApiKey(
   partnerId: string,
   name: string,
-  tier: ApiKey['tier'],
+  tier: ApiKey["tier"],
   permissions: string[] = []
 ): Promise&lt;string&gt; {
   // Generate secure random key
   const key = `mk_${tier}_${generateRandomString(32)}`;
 &nbsp;
-  const apiKey: Omit&lt;ApiKey, 'id'&gt; = {
+  const apiKey: Omit&lt;ApiKey, "id"&gt; = {
     partnerId,
     name,
     key,
     tier,
     permissions,
-    status: 'active',
+    status: "active",
     rateLimit: {
       requestsPerMinute: getRateLimitForTier(tier).requestsPerMinute,
       requestsPerDay: getRateLimitForTier(tier).requestsPerDay,
@@ -671,11 +671,11 @@ export async function generateApiKey(
     createdAt: new Date(),
   };
 &nbsp;
-  const docRef = await db.collection('api_keys').add(apiKey);
+  const docRef = await db.collection("api_keys").add(apiKey);
 &nbsp;
   // Log creation
-  await db.collection('audit_logs').add({
-    action: 'API_KEY_CREATED',
+  await db.collection("audit_logs").add({
+    action: "API_KEY_CREATED",
     partnerId,
     apiKeyId: docRef.id,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -688,10 +688,10 @@ export async function generateApiKey(
  * Revoke API key
  */
 export async function revokeApiKey(apiKeyId: string): Promise&lt;void&gt; {
-  const apiKeyRef = db.collection('api_keys').doc(apiKeyId);
+  const apiKeyRef = db.collection("api_keys").doc(apiKeyId);
   
   await apiKeyRef.update({
-    status: 'revoked',
+    status: "revoked",
     revokedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 &nbsp;
@@ -706,7 +706,7 @@ export async function revokeApiKey(apiKeyId: string): Promise&lt;void&gt; {
 /**
  * Get rate limit configuration for tier
  */
-function getRateLimitForTier(tier: ApiKey['tier']): {
+function getRateLimitForTier(tier: ApiKey["tier"]): {
   requestsPerMinute: number;
   requestsPerDay: number;
 } {
@@ -718,15 +718,15 @@ function getRateLimitForTier(tier: ApiKey['tier']): {
     enterprise: { requestsPerMinute: 10000, requestsPerDay: -1 }, // Unlimited
   };
 &nbsp;
-  return limits[tier] || <span class="branch-1 cbranch-no" title="branch not covered" >limits.free;</span>
+  return limits[tier] || limits.free;
 }
 &nbsp;
 /**
  * Generate random string
  */
 function generateRandomString(length: number): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
   for (let i = 0; i &lt; length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -739,7 +739,7 @@ function generateRandomString(length: number): string {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-19T18:22:00.399Z
+                at 2026-01-05T01:05:26.313Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

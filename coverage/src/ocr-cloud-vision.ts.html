@@ -324,7 +324,13 @@
 <a name='L259'></a><a href='#L259'>259</a>
 <a name='L260'></a><a href='#L260'>260</a>
 <a name='L261'></a><a href='#L261'>261</a>
-<a name='L262'></a><a href='#L262'>262</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L262'></a><a href='#L262'>262</a>
+<a name='L263'></a><a href='#L263'>263</a>
+<a name='L264'></a><a href='#L264'>264</a>
+<a name='L265'></a><a href='#L265'>265</a>
+<a name='L266'></a><a href='#L266'>266</a>
+<a name='L267'></a><a href='#L267'>267</a>
+<a name='L268'></a><a href='#L268'>268</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -472,6 +478,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -521,6 +530,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -592,9 +604,9 @@
  * Triggered via HTTPS callable function.
  */
 &nbsp;
-import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
-import { ImageAnnotatorClient } from '@google-cloud/vision';
+import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
+import { ImageAnnotatorClient } from "@google-cloud/vision";
 &nbsp;
 // Initialize Vision API client
 const visionClient = new ImageAnnotatorClient();
@@ -630,17 +642,17 @@ interface BoundingBox {
  * HTTPS Callable Function: Process image with Cloud Vision API
  */
 export const processImageWithCloudVision = functions
-  .region('us-central1')
+  .region("us-central1")
   .runWith({
     timeoutSeconds: 60,
-    memory: '512MB'
+    memory: "512MB"
   })
   .https.onCall(async (data: OcrRequest, context): Promise&lt;OcrResponse&gt; =&gt; {
     // Check authentication
     if (!context.auth) {
       throw new functions.https.HttpsError(
-        'unauthenticated',
-        'User must be authenticated to use OCR service'
+        "unauthenticated",
+        "User must be authenticated to use OCR service"
       );
     }
 &nbsp;
@@ -649,16 +661,16 @@ export const processImageWithCloudVision = functions
     // Validate input
     if (!imageData || !userId) {
       throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Missing required fields: imageData and userId'
+        "invalid-argument",
+        "Missing required fields: imageData and userId"
       );
     }
 &nbsp;
     // Verify user owns the request
     if (context.auth.uid !== userId) {
       throw new functions.https.HttpsError(
-        'permission-denied',
-        'User can only process their own images'
+        "permission-denied",
+        "User can only process their own images"
       );
     }
 &nbsp;
@@ -666,8 +678,8 @@ export const processImageWithCloudVision = functions
       console.log(`[Cloud Vision OCR] Processing image for user: ${userId}, scan: ${scanId}`);
 &nbsp;
       // Extract base64 data from data URL
-      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
-      const imageBuffer = Buffer.from(base64Data, 'base64');
+      const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
+      const imageBuffer = Buffer.from(base64Data, "base64");
 &nbsp;
       // Call Cloud Vision API
       const [result] = await visionClient.documentTextDetection({
@@ -679,13 +691,13 @@ export const processImageWithCloudVision = functions
       if (!detections || detections.length === 0) {
         return {
           success: false,
-          error: 'No text detected in image'
+          error: "No text detected in image"
         };
       }
 &nbsp;
       // First annotation is the full text
       const fullTextAnnotation = detections[0];
-      const fullText = fullTextAnnotation.description || <span class="branch-1 cbranch-no" title="branch not covered" >'';</span>
+      const fullText = fullTextAnnotation.description || <span class="branch-1 cbranch-no" title="branch not covered" >"";</span>
 &nbsp;
       // Calculate average confidence from individual words
       let totalConfidence = 0;
@@ -727,11 +739,14 @@ export const processImageWithCloudVision = functions
             cloudVisionConfidence: averageConfidence,
             cloudVisionBlocks: blocks,
             cloudVisionProcessedAt: admin.firestore.FieldValue.serverTimestamp(),
-            engine: 'cloud_vision'
+            engine: "cloud_vision"
           });
       }
 &nbsp;
-      console.log(`[Cloud Vision OCR] ✅ Success - Text length: ${fullText.length}, Confidence: ${averageConfidence.toFixed(2)}%`);
+      console.log(
+        `[Cloud Vision OCR] ✅ Success - Text length: ${fullText.length}, ` +
+        `Confidence: ${averageConfidence.toFixed(2)}%`
+      );
 &nbsp;
       return {
         success: true,
@@ -741,9 +756,9 @@ export const processImageWithCloudVision = functions
       };
 &nbsp;
     } catch (error: unknown) {
-      console.error('[Cloud Vision OCR] ❌ Error:', error);
+      console.error("[Cloud Vision OCR] ❌ Error:", error);
 &nbsp;
-      const errorMessage = error instanceof Error ? error.message : <span class="branch-1 cbranch-no" title="branch not covered" >'Unknown error';</span>
+      const errorMessage = error instanceof Error ? error.message : <span class="branch-1 cbranch-no" title="branch not covered" >"Unknown error";</span>
 &nbsp;
       // Save error to Firestore
       <span class="missing-if-branch" title="if path not taken" >I</span>if (scanId) {
@@ -753,12 +768,12 @@ export const processImageWithCloudVision = functions
           .update({
             cloudVisionError: errorMessage,
             cloudVisionProcessedAt: admin.firestore.FieldValue.serverTimestamp(),
-            status: 'error'
+            status: "error"
           });
       }
 &nbsp;
       throw new functions.https.HttpsError(
-        'internal',
+        "internal",
         `Failed to process image: ${errorMessage}`
       );
     }
@@ -768,33 +783,36 @@ export const processImageWithCloudVision = functions
  * Firestore Trigger: Auto-process low confidence scans with Cloud Vision
  */
 export const autoProcessLowConfidenceScans = functions
-  .region('us-central1')
+  .region("us-central1")
   .firestore
-  .document('users/{userId}/ocr_scans/{scanId}')
+  .document("users/{userId}/ocr_scans/{scanId}")
   .onCreate(async (snap, context) =&gt; {
     const data = snap.data();
     const { userId, scanId } = context.params;
 &nbsp;
     // Check if scan has low confidence and hasn't been processed with Cloud Vision
     const confidence = data.confidence || 0;
-    const engine = data.engine || <span class="branch-1 cbranch-no" title="branch not covered" >'tesseract';</span>
+    const engine = data.engine || <span class="branch-1 cbranch-no" title="branch not covered" >"tesseract";</span>
     const hasCloudVisionResult = !!data.cloudVisionText;
 &nbsp;
-    if (confidence &lt; 70 &amp;&amp; engine === 'tesseract' &amp;&amp; !hasCloudVisionResult) {
-      console.log(`[Auto Cloud Vision] Low confidence scan detected (${confidence}%) for user: ${userId}, scan: ${scanId}`);
+    if (confidence &lt; 70 &amp;&amp; engine === "tesseract" &amp;&amp; !hasCloudVisionResult) {
+      console.log(
+        `[Auto Cloud Vision] Low confidence scan detected (${confidence}%) ` +
+        `for user: ${userId}, scan: ${scanId}`
+      );
 &nbsp;
       try {
         // Get image data URL from document
         const imageDataUrl = data.imageDataUrl;
         
         if (!imageDataUrl) {
-          console.warn('[Auto Cloud Vision] No image data URL found in scan document');
+          console.warn("[Auto Cloud Vision] No image data URL found in scan document");
           return;
         }
 &nbsp;
         // Extract base64 data
-        const base64Data = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
-        const imageBuffer = Buffer.from(base64Data, 'base64');
+        const base64Data = imageDataUrl.replace(/^data:image\/\w+;base64,/, "");
+        const imageBuffer = Buffer.from(base64Data, "base64");
 &nbsp;
         // Call Cloud Vision API
         const [result] = await visionClient.documentTextDetection({
@@ -804,20 +822,20 @@ export const autoProcessLowConfidenceScans = functions
         const detections = result.textAnnotations;
 &nbsp;
         if (!detections || detections.length === 0) {
-          console.log('[Auto Cloud Vision] No text detected');
+          console.log("[Auto Cloud Vision] No text detected");
           
           await snap.ref.update({
-            cloudVisionText: '',
+            cloudVisionText: "",
             cloudVisionConfidence: 0,
             cloudVisionProcessedAt: admin.firestore.FieldValue.serverTimestamp(),
-            cloudVisionError: 'No text detected'
+            cloudVisionError: "No text detected"
           });
           
           return;
         }
 &nbsp;
         // Extract full text
-        const fullText = detections[0].description || <span class="branch-1 cbranch-no" title="branch not covered" >'';</span>
+        const fullText = detections[0].description || <span class="branch-1 cbranch-no" title="branch not covered" >"";</span>
         const cloudConfidence = 95; // Cloud Vision typically has high confidence
 &nbsp;
         // Update document with Cloud Vision results
@@ -828,16 +846,16 @@ export const autoProcessLowConfidenceScans = functions
           // Only update main fields if Cloud Vision has better results
           ...(cloudConfidence &gt; confidence &amp;&amp; {
             confidence: cloudConfidence,
-            engine: 'cloud_vision'
+            engine: "cloud_vision"
           })
         });
 &nbsp;
         console.log(`[Auto Cloud Vision] ✅ Processed successfully - Confidence: ${cloudConfidence}%`);
 &nbsp;
       } catch (error: unknown) {
-        console.error('[Auto Cloud Vision] ❌ Error:', error);
+        console.error("[Auto Cloud Vision] ❌ Error:", error);
         
-        const errorMessage = error instanceof Error ? error.message : <span class="branch-1 cbranch-no" title="branch not covered" >'Unknown error';</span>
+        const errorMessage = error instanceof Error ? error.message : <span class="branch-1 cbranch-no" title="branch not covered" >"Unknown error";</span>
         
         await snap.ref.update({
           cloudVisionError: errorMessage,
@@ -853,7 +871,7 @@ export const autoProcessLowConfidenceScans = functions
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-19T18:22:00.399Z
+                at 2026-01-05T01:05:26.313Z
             </div>
         <script src="../prettify.js"></script>
         <script>

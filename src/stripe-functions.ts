@@ -1,11 +1,11 @@
-import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
-import Stripe from 'stripe';
+import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
+import Stripe from "stripe";
 
 // Initialize Stripe with secret key (use environment variable or config)
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || functions.config()?.stripe?.secret_key || '';
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || functions.config()?.stripe?.secret_key || "";
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
-  apiVersion: '2023-10-16',
+  apiVersion: "2023-10-16",
 }) : null as any;
 
 /**
@@ -17,8 +17,8 @@ export const createStripeCheckoutSession = functions.https.onCall(
       // Authenticate user
       if (!context.auth) {
         throw new functions.https.HttpsError(
-          'unauthenticated',
-          'User must be authenticated'
+          "unauthenticated",
+          "User must be authenticated"
         );
       }
 
@@ -27,13 +27,13 @@ export const createStripeCheckoutSession = functions.https.onCall(
       // Validate required fields
       if (!priceId || !userId || !plan) {
         throw new functions.https.HttpsError(
-          'invalid-argument',
-          'Missing required fields'
+          "invalid-argument",
+          "Missing required fields"
         );
       }
 
       // Create or retrieve Stripe customer
-      const userDoc = await admin.firestore().collection('users').doc(userId).get();
+      const userDoc = await admin.firestore().collection("users").doc(userId).get();
       const userData = userDoc.data();
 
       let customerId = userData?.stripeCustomerId;
@@ -50,7 +50,7 @@ export const createStripeCheckoutSession = functions.https.onCall(
         customerId = customer.id;
 
         // Save customer ID to Firestore (use set with merge to create if not exists)
-        await admin.firestore().collection('users').doc(userId).set({
+        await admin.firestore().collection("users").doc(userId).set({
           stripeCustomerId: customerId,
         }, { merge: true });
       }
@@ -64,7 +64,7 @@ export const createStripeCheckoutSession = functions.https.onCall(
             quantity: 1,
           },
         ],
-        mode: 'subscription',
+        mode: "subscription",
         success_url: successUrl,
         cancel_url: cancelUrl,
         metadata: {
@@ -86,8 +86,8 @@ export const createStripeCheckoutSession = functions.https.onCall(
         url: session.url,
       };
     } catch (error: any) {
-      console.error('Error creating checkout session:', error);
-      throw new functions.https.HttpsError('internal', error?.message || 'Unknown error');
+      console.error("Error creating checkout session:", error);
+      throw new functions.https.HttpsError("internal", error?.message || "Unknown error");
     }
   }
 );
@@ -97,7 +97,7 @@ export const createStripeCheckoutSession = functions.https.onCall(
  * Processes Stripe events and updates Firestore
  */
 export const stripeWebhook = functions.https.onRequest(async (req, res) => {
-  const sig = req.headers['stripe-signature'] as string;
+  const sig = req.headers["stripe-signature"] as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || functions.config()?.stripe?.webhook_secret;
 
   let event: Stripe.Event;
@@ -105,43 +105,43 @@ export const stripeWebhook = functions.https.onRequest(async (req, res) => {
   try {
     event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
   } catch (error: any) {
-    console.error('Webhook signature verification failed:', error);
-    res.status(400).send(`Webhook Error: ${error?.message || 'Unknown error'}`);
+    console.error("Webhook signature verification failed:", error);
+    res.status(400).send(`Webhook Error: ${error?.message || "Unknown error"}`);
     return;
   }
 
   try {
     // Handle different event types
     switch (event.type) {
-      case 'checkout.session.completed':
-        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
-        break;
+    case "checkout.session.completed":
+      await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+      break;
 
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
-        await handleSubscriptionUpdate(event.data.object as Stripe.Subscription);
-        break;
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+      await handleSubscriptionUpdate(event.data.object as Stripe.Subscription);
+      break;
 
-      case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
-        break;
+    case "customer.subscription.deleted":
+      await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+      break;
 
-      case 'invoice.paid':
-        await handleInvoicePaid(event.data.object as Stripe.Invoice);
-        break;
+    case "invoice.paid":
+      await handleInvoicePaid(event.data.object as Stripe.Invoice);
+      break;
 
-      case 'invoice.payment_failed':
-        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
-        break;
+    case "invoice.payment_failed":
+      await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+      break;
 
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
     }
 
     res.json({ received: true });
   } catch (error: any) {
-    console.error('Error processing webhook:', error);
-    res.status(500).send(`Webhook Error: ${error?.message || 'Unknown error'}`);
+    console.error("Error processing webhook:", error);
+    res.status(500).send(`Webhook Error: ${error?.message || "Unknown error"}`);
   }
 });
 
@@ -154,7 +154,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   const billingCycle = session.metadata?.billingCycle;
 
   if (!userId || !plan) {
-    console.error('Missing metadata in checkout session');
+    console.error("Missing metadata in checkout session");
     return;
   }
 
@@ -166,7 +166,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   // Update user subscription in Firestore
   await updateUserSubscription(userId, {
     plan,
-    status: 'active',
+    status: "active",
     stripeCustomerId: session.customer as string,
     stripeSubscriptionId: subscriptionId,
     currentPeriodStart: new Date(subscription.current_period_start * 1000).toISOString(),
@@ -184,7 +184,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   const userId = subscription.metadata?.userId;
 
   if (!userId) {
-    console.error('Missing userId in subscription metadata');
+    console.error("Missing userId in subscription metadata");
     return;
   }
 
@@ -207,13 +207,13 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const userId = subscription.metadata?.userId;
 
   if (!userId) {
-    console.error('Missing userId in subscription metadata');
+    console.error("Missing userId in subscription metadata");
     return;
   }
 
   await updateUserSubscription(userId, {
-    plan: 'free',
-    status: 'canceled',
+    plan: "free",
+    status: "canceled",
     stripeSubscriptionId: null,
   });
 
@@ -229,13 +229,13 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   // Find user by Stripe customer ID
   const userSnapshot = await admin
     .firestore()
-    .collection('users')
-    .where('stripeCustomerId', '==', customerId)
+    .collection("users")
+    .where("stripeCustomerId", "==", customerId)
     .limit(1)
     .get();
 
   if (userSnapshot.empty) {
-    console.error('User not found for customer:', customerId);
+    console.error("User not found for customer:", customerId);
     return;
   }
 
@@ -244,12 +244,12 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   // Reset usage counters on successful payment
   await admin
     .firestore()
-    .collection('subscriptions')
+    .collection("subscriptions")
     .doc(userId)
     .update({
-      'currentUsage.reportsGenerated': 0,
-      'currentUsage.ocrScansUsed': 0,
-      'currentUsage.telehealthConsultsUsed': 0,
+      "currentUsage.reportsGenerated": 0,
+      "currentUsage.ocrScansUsed": 0,
+      "currentUsage.telehealthConsultsUsed": 0,
       lastPaymentDate: new Date().toISOString(),
       lastPaymentAmount: invoice.amount_paid / 100,
     });
@@ -266,20 +266,20 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   // Find user by Stripe customer ID
   const userSnapshot = await admin
     .firestore()
-    .collection('users')
-    .where('stripeCustomerId', '==', customerId)
+    .collection("users")
+    .where("stripeCustomerId", "==", customerId)
     .limit(1)
     .get();
 
   if (userSnapshot.empty) {
-    console.error('User not found for customer:', customerId);
+    console.error("User not found for customer:", customerId);
     return;
   }
 
   const userId = userSnapshot.docs[0].id;
 
   await updateUserSubscription(userId, {
-    status: 'past_due',
+    status: "past_due",
   });
 
   // NOTE: Email notification for failed payment pending (see PRODUCT-ROADMAP-IMPROVEMENTS.md)
@@ -292,7 +292,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
  * Update user subscription in Firestore
  */
 async function updateUserSubscription(userId: string, data: any) {
-  const subscriptionRef = admin.firestore().collection('subscriptions').doc(userId);
+  const subscriptionRef = admin.firestore().collection("subscriptions").doc(userId);
   const subscriptionDoc = await subscriptionRef.get();
 
   if (!subscriptionDoc.exists) {
@@ -317,20 +317,20 @@ async function updateUserSubscription(userId: string, data: any) {
  */
 function mapStripeStatus(
   stripeStatus: Stripe.Subscription.Status
-): 'active' | 'past_due' | 'canceled' | 'trial' {
+): "active" | "past_due" | "canceled" | "trial" {
   switch (stripeStatus) {
-    case 'active':
-      return 'active';
-    case 'past_due':
-    case 'unpaid':
-      return 'past_due';
-    case 'canceled':
-    case 'incomplete_expired':
-      return 'canceled';
-    case 'trialing':
-      return 'trial';
-    default:
-      return 'active';
+  case "active":
+    return "active";
+  case "past_due":
+  case "unpaid":
+    return "past_due";
+  case "canceled":
+  case "incomplete_expired":
+    return "canceled";
+  case "trialing":
+    return "trial";
+  default:
+    return "active";
   }
 }
 
@@ -340,13 +340,13 @@ function mapStripeStatus(
 export const getStripeSubscriptionStatus = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
 
     const { subscriptionId } = data;
 
     if (!subscriptionId) {
-      throw new functions.https.HttpsError('invalid-argument', 'Missing subscriptionId');
+      throw new functions.https.HttpsError("invalid-argument", "Missing subscriptionId");
     }
 
     try {
@@ -360,8 +360,8 @@ export const getStripeSubscriptionStatus = functions.https.onCall(
         subscriptionId: subscription.id,
       };
     } catch (error: any) {
-      console.error('Error getting subscription status:', error);
-      throw new functions.https.HttpsError('internal', error?.message || 'Unknown error');
+      console.error("Error getting subscription status:", error);
+      throw new functions.https.HttpsError("internal", error?.message || "Unknown error");
     }
   }
 );
@@ -371,13 +371,13 @@ export const getStripeSubscriptionStatus = functions.https.onCall(
  */
 export const cancelStripeSubscription = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
   }
 
   const { subscriptionId } = data;
 
   if (!subscriptionId) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing subscriptionId');
+    throw new functions.https.HttpsError("invalid-argument", "Missing subscriptionId");
   }
 
   try {
@@ -386,10 +386,10 @@ export const cancelStripeSubscription = functions.https.onCall(async (data, cont
       cancel_at_period_end: true,
     });
 
-    return { success: true, message: 'Subscription will be canceled at period end' };
+    return { success: true, message: "Subscription will be canceled at period end" };
   } catch (error: any) {
-    console.error('Error canceling subscription:', error);
-    throw new functions.https.HttpsError('internal', error?.message || 'Unknown error');
+    console.error("Error canceling subscription:", error);
+    throw new functions.https.HttpsError("internal", error?.message || "Unknown error");
   }
 });
 
@@ -399,13 +399,13 @@ export const cancelStripeSubscription = functions.https.onCall(async (data, cont
 export const reactivateStripeSubscription = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
 
     const { subscriptionId } = data;
 
     if (!subscriptionId) {
-      throw new functions.https.HttpsError('invalid-argument', 'Missing subscriptionId');
+      throw new functions.https.HttpsError("invalid-argument", "Missing subscriptionId");
     }
 
     try {
@@ -413,10 +413,10 @@ export const reactivateStripeSubscription = functions.https.onCall(
         cancel_at_period_end: false,
       });
 
-      return { success: true, message: 'Subscription reactivated' };
+      return { success: true, message: "Subscription reactivated" };
     } catch (error: any) {
-      console.error('Error reactivating subscription:', error);
-      throw new functions.https.HttpsError('internal', error?.message || 'Unknown error');
+      console.error("Error reactivating subscription:", error);
+      throw new functions.https.HttpsError("internal", error?.message || "Unknown error");
     }
   }
 );
@@ -427,13 +427,13 @@ export const reactivateStripeSubscription = functions.https.onCall(
 export const createStripeCustomerPortal = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+      throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
 
     const { customerId, returnUrl } = data;
 
     if (!customerId) {
-      throw new functions.https.HttpsError('invalid-argument', 'Missing customerId');
+      throw new functions.https.HttpsError("invalid-argument", "Missing customerId");
     }
 
     try {
@@ -444,8 +444,8 @@ export const createStripeCustomerPortal = functions.https.onCall(
 
       return { url: session.url };
     } catch (error: any) {
-      console.error('Error creating customer portal:', error);
-      throw new functions.https.HttpsError('internal', error?.message || 'Unknown error');
+      console.error("Error creating customer portal:", error);
+      throw new functions.https.HttpsError("internal", error?.message || "Unknown error");
     }
   }
 );
@@ -455,13 +455,13 @@ export const createStripeCustomerPortal = functions.https.onCall(
  */
 export const getStripeUpcomingInvoice = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
   }
 
   const { customerId } = data;
 
   if (!customerId) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing customerId');
+    throw new functions.https.HttpsError("invalid-argument", "Missing customerId");
   }
 
   try {
@@ -476,8 +476,8 @@ export const getStripeUpcomingInvoice = functions.https.onCall(async (data, cont
       periodEnd: invoice.period_end,
     };
   } catch (error: any) {
-    console.error('Error getting upcoming invoice:', error);
-    throw new functions.https.HttpsError('internal', error?.message || 'Unknown error');
+    console.error("Error getting upcoming invoice:", error);
+    throw new functions.https.HttpsError("internal", error?.message || "Unknown error");
   }
 });
 
@@ -486,13 +486,13 @@ export const getStripeUpcomingInvoice = functions.https.onCall(async (data, cont
  */
 export const getStripePaymentHistory = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
   }
 
   const { customerId, limit = 10 } = data;
 
   if (!customerId) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing customerId');
+    throw new functions.https.HttpsError("invalid-argument", "Missing customerId");
   }
 
   try {
@@ -512,8 +512,8 @@ export const getStripePaymentHistory = functions.https.onCall(async (data, conte
       })),
     };
   } catch (error: any) {
-    console.error('Error getting payment history:', error);
-    throw new functions.https.HttpsError('internal', error?.message || 'Unknown error');
+    console.error("Error getting payment history:", error);
+    throw new functions.https.HttpsError("internal", error?.message || "Unknown error");
   }
 });
 
@@ -522,13 +522,13 @@ export const getStripePaymentHistory = functions.https.onCall(async (data, conte
  */
 export const updateStripeSubscription = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
   }
 
   const { subscriptionId, newPriceId } = data;
 
   if (!subscriptionId || !newPriceId) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: subscriptionId, newPriceId');
+    throw new functions.https.HttpsError("invalid-argument", "Missing required fields: subscriptionId, newPriceId");
   }
 
   try {
@@ -543,7 +543,7 @@ export const updateStripeSubscription = functions.https.onCall(async (data, cont
           price: newPriceId,
         },
       ],
-      proration_behavior: 'always_invoice', // Charge/credit prorated amount immediately
+      proration_behavior: "always_invoice", // Charge/credit prorated amount immediately
     });
 
     return {
@@ -553,7 +553,7 @@ export const updateStripeSubscription = functions.https.onCall(async (data, cont
       currentPeriodEnd: updated.current_period_end,
     };
   } catch (error: any) {
-    console.error('Error updating subscription:', error);
-    throw new functions.https.HttpsError('internal', error?.message || 'Unknown error');
+    console.error("Error updating subscription:", error);
+    throw new functions.https.HttpsError("internal", error?.message || "Unknown error");
   }
 });

@@ -8,16 +8,16 @@
  */
 
 // @ts-nocheck
-import * as admin from 'firebase-admin';
-import functionsTest from 'firebase-functions-test';
-import { describe, expect, it, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
+import * as admin from "firebase-admin";
+import functionsTest from "firebase-functions-test";
+import { describe, expect, it, beforeAll, afterAll, beforeEach, jest } from "@jest/globals";
 
 const test = functionsTest();
 
 // Mock Stripe
 const mockStripeSubscriptionsUpdate = jest.fn();
 
-jest.mock('stripe', () => {
+jest.mock("stripe", () => {
   return jest.fn().mockImplementation(() => ({
     subscriptions: {
       update: mockStripeSubscriptionsUpdate,
@@ -26,18 +26,18 @@ jest.mock('stripe', () => {
 });
 
 // Set STRIPE_SECRET_KEY before importing function (initializes Stripe SDK)
-process.env.STRIPE_SECRET_KEY = 'sk_test_mock_key';
+process.env.STRIPE_SECRET_KEY = "sk_test_mock_key";
 
-import { cancelStripeSubscription, reactivateStripeSubscription } from '../../stripe-functions';
+import { cancelStripeSubscription, reactivateStripeSubscription } from "../../stripe-functions";
 
-describe('🔵 Stripe Functions - Cancel/Reactivate', () => {
+describe("🔵 Stripe Functions - Cancel/Reactivate", () => {
   let wrappedCancel: any;
   let wrappedReactivate: any;
-  const testUserId = 'test-user-cancel-123';
-  const testSubscriptionId = 'sub_test_cancel_123';
+  const testUserId = "test-user-cancel-123";
+  const testSubscriptionId = "sub_test_cancel_123";
   
   beforeAll(() => {
-    // Firebase Admin j� inicializado no setup.ts global
+    // Firebase Admin j� inicializado no setup.ts global
     
     wrappedCancel = test.wrap(cancelStripeSubscription);
     wrappedReactivate = test.wrap(reactivateStripeSubscription);
@@ -51,9 +51,9 @@ describe('🔵 Stripe Functions - Cancel/Reactivate', () => {
     jest.clearAllMocks();
   });
 
-  describe('cancelStripeSubscription', () => {
-    describe('✅ Cenários Positivos', () => {
-      it('deve cancelar subscription com cancel_at_period_end', async () => {
+  describe("cancelStripeSubscription", () => {
+    describe("✅ Cenários Positivos", () => {
+      it("deve cancelar subscription com cancel_at_period_end", async () => {
         // Arrange
         mockStripeSubscriptionsUpdate.mockResolvedValue({
           id: testSubscriptionId,
@@ -68,7 +68,7 @@ describe('🔵 Stripe Functions - Cancel/Reactivate', () => {
           auth: {
             uid: testUserId,
             token: {
-              email: 'test@example.com',
+              email: "test@example.com",
             },
           },
         };
@@ -78,7 +78,7 @@ describe('🔵 Stripe Functions - Cancel/Reactivate', () => {
 
         // Assert
         expect(result.success).toBe(true);
-        expect(result.message).toContain('canceled at period end');
+        expect(result.message).toContain("canceled at period end");
         expect(mockStripeSubscriptionsUpdate).toHaveBeenCalledWith(
           testSubscriptionId,
           { cancel_at_period_end: true }
@@ -86,40 +86,40 @@ describe('🔵 Stripe Functions - Cancel/Reactivate', () => {
       });
     });
 
-    describe('❌ Cenários Negativos', () => {
-      it('deve retornar erro se não autenticado', async () => {
+    describe("❌ Cenários Negativos", () => {
+      it("deve retornar erro se não autenticado", async () => {
         const data = { subscriptionId: testSubscriptionId };
         const context = { auth: undefined };
 
         await expect(wrappedCancel(data, context)).rejects.toThrow(
-          'User must be authenticated'
+          "User must be authenticated"
         );
       });
 
-      it('deve retornar erro se subscriptionId ausente', async () => {
+      it("deve retornar erro se subscriptionId ausente", async () => {
         const data = {};
         const context = {
           auth: {
             uid: testUserId,
-            token: { email: 'test@example.com' },
+            token: { email: "test@example.com" },
           },
         };
 
         await expect(wrappedCancel(data, context)).rejects.toThrow(
-          'Missing subscriptionId'
+          "Missing subscriptionId"
         );
       });
 
-      it('deve retornar erro se Stripe API falhar', async () => {
+      it("deve retornar erro se Stripe API falhar", async () => {
         mockStripeSubscriptionsUpdate.mockRejectedValue(
-          new Error('Stripe API Error: Invalid subscription')
+          new Error("Stripe API Error: Invalid subscription")
         );
 
         const data = { subscriptionId: testSubscriptionId };
         const context = {
           auth: {
             uid: testUserId,
-            token: { email: 'test@example.com' },
+            token: { email: "test@example.com" },
           },
         };
 
@@ -128,9 +128,9 @@ describe('🔵 Stripe Functions - Cancel/Reactivate', () => {
     });
   });
 
-  describe('reactivateStripeSubscription', () => {
-    describe('✅ Cenários Positivos', () => {
-      it('deve reativar subscription removendo cancel_at_period_end', async () => {
+  describe("reactivateStripeSubscription", () => {
+    describe("✅ Cenários Positivos", () => {
+      it("deve reativar subscription removendo cancel_at_period_end", async () => {
         // Arrange
         mockStripeSubscriptionsUpdate.mockResolvedValue({
           id: testSubscriptionId,
@@ -145,7 +145,7 @@ describe('🔵 Stripe Functions - Cancel/Reactivate', () => {
           auth: {
             uid: testUserId,
             token: {
-              email: 'test@example.com',
+              email: "test@example.com",
             },
           },
         };
@@ -155,7 +155,7 @@ describe('🔵 Stripe Functions - Cancel/Reactivate', () => {
 
         // Assert
         expect(result.success).toBe(true);
-        expect(result.message).toContain('reactivated');
+        expect(result.message).toContain("reactivated");
         expect(mockStripeSubscriptionsUpdate).toHaveBeenCalledWith(
           testSubscriptionId,
           { cancel_at_period_end: false }
@@ -163,40 +163,40 @@ describe('🔵 Stripe Functions - Cancel/Reactivate', () => {
       });
     });
 
-    describe('❌ Cenários Negativos', () => {
-      it('deve retornar erro se não autenticado', async () => {
+    describe("❌ Cenários Negativos", () => {
+      it("deve retornar erro se não autenticado", async () => {
         const data = { subscriptionId: testSubscriptionId };
         const context = { auth: undefined };
 
         await expect(wrappedReactivate(data, context)).rejects.toThrow(
-          'User must be authenticated'
+          "User must be authenticated"
         );
       });
 
-      it('deve retornar erro se subscriptionId ausente', async () => {
+      it("deve retornar erro se subscriptionId ausente", async () => {
         const data = {};
         const context = {
           auth: {
             uid: testUserId,
-            token: { email: 'test@example.com' },
+            token: { email: "test@example.com" },
           },
         };
 
         await expect(wrappedReactivate(data, context)).rejects.toThrow(
-          'Missing subscriptionId'
+          "Missing subscriptionId"
         );
       });
 
-      it('deve retornar erro se Stripe API falhar', async () => {
+      it("deve retornar erro se Stripe API falhar", async () => {
         mockStripeSubscriptionsUpdate.mockRejectedValue(
-          new Error('Stripe API Error: Subscription already active')
+          new Error("Stripe API Error: Subscription already active")
         );
 
         const data = { subscriptionId: testSubscriptionId };
         const context = {
           auth: {
             uid: testUserId,
-            token: { email: 'test@example.com' },
+            token: { email: "test@example.com" },
           },
         };
 

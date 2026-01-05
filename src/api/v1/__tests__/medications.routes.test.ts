@@ -9,14 +9,15 @@ import * as admin from "firebase-admin";
 import request from "supertest";
 import { medicationsRouter } from "../medications.routes";
 import { errorHandler } from "../../middleware/error-handler";
+import { clearMockData } from "../../../__tests__/setup";
 
-// Firebase Admin já inicializado no setup.ts global
+// Firebase Admin mockado no setup.ts global
 const db = admin.firestore();
 
 describe("💊 Medications Routes - Integration Tests", () => {
   let app: Express;
-  const testPartnerId = "test-partner-" + Date.now();
-  const testPatientId = "test-patient-" + Date.now();
+  const testPartnerId = "test-partner-med-" + Date.now();
+  const testPatientId = "test-patient-med-" + Date.now();
   let testMedicationId: string;
 
   // Mock middleware to inject partnerId
@@ -31,23 +32,14 @@ describe("💊 Medications Routes - Integration Tests", () => {
       partnerId: testPartnerId,
       name: "Test Patient",
       email: "patient@test.com",
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: new Date().toISOString(),
     });
-  }, 30000);
+  });
 
   afterAll(async () => {
     // Clean up test data
-    await db.collection("patients").doc(testPatientId).delete();
-
-    // Clean up medications
-    const medicationsSnapshot = await db
-      .collection("medications")
-      .where("partnerId", "==", testPartnerId)
-      .get();
-
-    const deletePromises = medicationsSnapshot.docs.map((doc) => doc.ref.delete());
-    await Promise.all(deletePromises);
-  }, 30000);
+    clearMockData();
+  });
 
   beforeEach(() => {
     app = express();

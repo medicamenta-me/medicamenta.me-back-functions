@@ -2,23 +2,24 @@
  * 📊 Adherence Routes - Integration Tests
  * 
  * Testes de integração para rotas de controle de aderência
- * Usa Firebase Emulator (não mocks)
+ * Usa mocks do Firestore
  */
 
-import request from 'supertest';
-import express, { Application } from 'express';
-import * as admin from 'firebase-admin';
-import { adherenceRouter } from '../adherence.routes';
-import { errorHandler } from '../../middleware/error-handler';
+import request from "supertest";
+import express, { Application } from "express";
+import * as admin from "firebase-admin";
+import { adherenceRouter } from "../adherence.routes";
+import { errorHandler } from "../../middleware/error-handler";
+import { clearMockData } from "../../../__tests__/setup";
 
-// Firebase Admin já inicializado no setup.ts global
+// Firebase Admin mockado no setup.ts global
 const db = admin.firestore();
 
 // Test constants
-const testPartnerId = 'test-partner-adherence-' + Date.now();
-const otherPartnerId = 'other-partner-' + Date.now();
-const testPatientId = 'test-patient-adherence-' + Date.now();
-const testMedicationId = 'test-medication-adherence-' + Date.now();
+const testPartnerId = "test-partner-adherence-" + Date.now();
+const otherPartnerId = "other-partner-" + Date.now();
+const testPatientId = "test-patient-adherence-" + Date.now();
+const testMedicationId = "test-medication-adherence-" + Date.now();
 
 // Mock auth middleware to inject partnerId
 const mockAuthMiddleware = (req: any, res: any, next: any) => {
@@ -26,118 +27,93 @@ const mockAuthMiddleware = (req: any, res: any, next: any) => {
   next();
 };
 
-describe('📊 Adherence Routes - Integration Tests', () => {
+describe("📊 Adherence Routes - Integration Tests", () => {
   let app: Application;
 
   beforeAll(async () => {
     // Create test patient
-    await db.collection('patients').doc(testPatientId).set({
+    await db.collection("patients").doc(testPatientId).set({
       partnerId: testPartnerId,
-      name: 'Test Patient Adherence',
-      dateOfBirth: new Date('1990-01-01'),
-      status: 'active',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      name: "Test Patient Adherence",
+      dateOfBirth: new Date("1990-01-01").toISOString(),
+      status: "active",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
 
     // Create test medication
-    await db.collection('medications').doc(testMedicationId).set({
+    await db.collection("medications").doc(testMedicationId).set({
       partnerId: testPartnerId,
       patientId: testPatientId,
-      name: 'Test Medication',
-      dosage: '10mg',
-      frequency: 'daily',
-      status: 'active',
+      name: "Test Medication",
+      dosage: "10mg",
+      frequency: "daily",
+      status: "active",
       totalDoses: 0,
       takenDoses: 0,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
 
     // Create test dose history records
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
 
-    await db.collection('dose_history').add({
+    await db.collection("dose_history").add({
       patientId: testPatientId,
       medicationId: testMedicationId,
-      medicationName: 'Test Medication',
-      dosage: '10mg',
-      scheduledTime: yesterday,
-      takenAt: yesterday,
-      status: 'taken',
-      source: 'test',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      medicationName: "Test Medication",
+      dosage: "10mg",
+      scheduledTime: yesterday.toISOString(),
+      takenAt: yesterday.toISOString(),
+      status: "taken",
+      source: "test",
+      createdAt: new Date().toISOString(),
     });
 
-    await db.collection('dose_history').add({
+    await db.collection("dose_history").add({
       patientId: testPatientId,
       medicationId: testMedicationId,
-      medicationName: 'Test Medication',
-      dosage: '10mg',
-      scheduledTime: new Date(),
+      medicationName: "Test Medication",
+      dosage: "10mg",
+      scheduledTime: new Date().toISOString(),
       takenAt: null,
-      status: 'missed',
-      source: 'test',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      status: "missed",
+      source: "test",
+      createdAt: new Date().toISOString(),
     });
-  }, 30000);
+  });
 
   afterAll(async () => {
-    // Cleanup: Delete all test data
-    await db.collection('patients').doc(testPatientId).delete();
-    await db.collection('medications').doc(testMedicationId).delete();
-
-    // Delete dose history
-    const doseSnapshot = await db.collection('dose_history')
-      .where('patientId', '==', testPatientId)
-      .get();
-
-    const deletePromises = doseSnapshot.docs.map(doc => doc.ref.delete());
-    await Promise.all(deletePromises);
-
-    // Delete patients and medications from other partner
-    const otherPatientsSnapshot = await db.collection('patients')
-      .where('partnerId', '==', otherPartnerId)
-      .get();
-    
-    const otherMedicationsSnapshot = await db.collection('medications')
-      .where('partnerId', '==', otherPartnerId)
-      .get();
-
-    const otherDeletePromises = [
-      ...otherPatientsSnapshot.docs.map(doc => doc.ref.delete()),
-      ...otherMedicationsSnapshot.docs.map(doc => doc.ref.delete()),
-    ];
-
-    await Promise.all(otherDeletePromises);
-  }, 30000);
+    // Cleanup: limpa dados mock
+    clearMockData();
+  });
 
   beforeEach(() => {
     app = express();
     app.use(express.json());
     app.use(mockAuthMiddleware);
-    app.use('/v1/adherence', adherenceRouter);
+    app.use("/v1/adherence", adherenceRouter);
     app.use(errorHandler);
   });
 
-  describe('GET /v1/adherence/:patientId', () => {
-    describe('✅ Cenários Positivos', () => {
-      it('deve retornar métricas de aderência do paciente', async () => {
+  describe("GET /v1/adherence/:patientId", () => {
+    describe("✅ Cenários Positivos", () => {
+      it("deve retornar métricas de aderência do paciente", async () => {
         const response = await request(app)
           .get(`/v1/adherence/${testPatientId}`);
 
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty('patientId', testPatientId);
-        expect(response.body).toHaveProperty('metrics');
-        expect(response.body.metrics).toHaveProperty('totalDoses');
-        expect(response.body.metrics).toHaveProperty('takenDoses');
-        expect(response.body.metrics).toHaveProperty('missedDoses');
-        expect(response.body.metrics).toHaveProperty('adherenceRate');
+        expect(response.body).toHaveProperty("patientId", testPatientId);
+        expect(response.body).toHaveProperty("metrics");
+        expect(response.body.metrics).toHaveProperty("totalDoses");
+        expect(response.body.metrics).toHaveProperty("takenDoses");
+        expect(response.body.metrics).toHaveProperty("missedDoses");
+        expect(response.body.metrics).toHaveProperty("adherenceRate");
         expect(response.body.metrics.totalDoses).toBeGreaterThanOrEqual(2);
       });
 
-      it('deve filtrar por medicação específica', async () => {
+      it("deve filtrar por medicação específica", async () => {
         const response = await request(app)
           .get(`/v1/adherence/${testPatientId}?medicationId=${testMedicationId}`);
 
@@ -145,7 +121,7 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.metrics.totalDoses).toBeGreaterThanOrEqual(2);
       });
 
-      it('deve filtrar por período de datas', async () => {
+      it("deve filtrar por período de datas", async () => {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - 7);
         const endDate = new Date();
@@ -158,7 +134,7 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.period.endDate).toBeDefined();
       });
 
-      it('deve filtrar apenas por startDate (sem endDate)', async () => {
+      it("deve filtrar apenas por startDate (sem endDate)", async () => {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - 7);
 
@@ -170,7 +146,7 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.period.endDate).toBeNull();
       });
 
-      it('deve filtrar apenas por endDate (sem startDate)', async () => {
+      it("deve filtrar apenas por endDate (sem startDate)", async () => {
         const endDate = new Date();
 
         const response = await request(app)
@@ -181,33 +157,33 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.period.endDate).toBeDefined();
       });
 
-      it('deve incluir breakdown por medicação', async () => {
+      it("deve incluir breakdown por medicação", async () => {
         const response = await request(app)
           .get(`/v1/adherence/${testPatientId}`);
 
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty('byMedication');
+        expect(response.body).toHaveProperty("byMedication");
         expect(Array.isArray(response.body.byMedication)).toBe(true);
       });
     });
 
-    describe('❌ Cenários Negativos', () => {
-      it('deve retornar 404 se paciente não existe', async () => {
+    describe("❌ Cenários Negativos", () => {
+      it("deve retornar 404 se paciente não existe", async () => {
         const response = await request(app)
-          .get('/v1/adherence/nonexistent-patient-id');
+          .get("/v1/adherence/nonexistent-patient-id");
 
         expect(response.status).toBe(404);
         expect(response.body.error).toBeDefined();
       });
 
-      it('deve retornar 403 se tentar acessar paciente de outro parceiro', async () => {
+      it("deve retornar 403 se tentar acessar paciente de outro parceiro", async () => {
         // Create patient with other partner
-        const otherPatientId = 'other-patient-' + Date.now();
-        await db.collection('patients').doc(otherPatientId).set({
+        const otherPatientId = "other-patient-" + Date.now();
+        await db.collection("patients").doc(otherPatientId).set({
           partnerId: otherPartnerId,
-          name: 'Other Patient',
-          dateOfBirth: new Date('1995-01-01'),
-          status: 'active',
+          name: "Other Patient",
+          dateOfBirth: new Date("1995-01-01"),
+          status: "active",
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -221,28 +197,28 @@ describe('📊 Adherence Routes - Integration Tests', () => {
     });
   });
 
-  describe('GET /v1/adherence/:patientId/history', () => {
-    describe('✅ Cenários Positivos', () => {
-      it('deve retornar histórico de doses do paciente', async () => {
+  describe("GET /v1/adherence/:patientId/history", () => {
+    describe("✅ Cenários Positivos", () => {
+      it("deve retornar histórico de doses do paciente", async () => {
         const response = await request(app)
           .get(`/v1/adherence/${testPatientId}/history`);
 
         expect(response.status).toBe(200);
-        expect(response.body).toHaveProperty('data');
+        expect(response.body).toHaveProperty("data");
         expect(Array.isArray(response.body.data)).toBe(true);
-        expect(response.body).toHaveProperty('pagination');
+        expect(response.body).toHaveProperty("pagination");
         expect(response.body.data.length).toBeGreaterThanOrEqual(2);
       });
 
-      it('deve filtrar por status', async () => {
+      it("deve filtrar por status", async () => {
         const response = await request(app)
           .get(`/v1/adherence/${testPatientId}/history?status=taken`);
 
         expect(response.status).toBe(200);
-        expect(response.body.data.every((d: any) => d.status === 'taken')).toBe(true);
+        expect(response.body.data.every((d: any) => d.status === "taken")).toBe(true);
       });
 
-      it('deve filtrar por medicação', async () => {
+      it("deve filtrar por medicação", async () => {
         const response = await request(app)
           .get(`/v1/adherence/${testPatientId}/history?medicationId=${testMedicationId}`);
 
@@ -250,7 +226,7 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.data.every((d: any) => d.medicationId === testMedicationId)).toBe(true);
       });
 
-      it('deve respeitar paginação', async () => {
+      it("deve respeitar paginação", async () => {
         const response = await request(app)
           .get(`/v1/adherence/${testPatientId}/history?limit=1&offset=0`);
 
@@ -260,22 +236,22 @@ describe('📊 Adherence Routes - Integration Tests', () => {
       });
     });
 
-    describe('❌ Cenários Negativos', () => {
-      it('deve retornar 404 se paciente não existe', async () => {
+    describe("❌ Cenários Negativos", () => {
+      it("deve retornar 404 se paciente não existe", async () => {
         const response = await request(app)
-          .get('/v1/adherence/nonexistent-patient-id/history');
+          .get("/v1/adherence/nonexistent-patient-id/history");
 
         expect(response.status).toBe(404);
         expect(response.body.error).toBeDefined();
       });
 
-      it('deve retornar 403 se tentar acessar histórico de outro parceiro', async () => {
-        const otherPatientId = 'other-patient-history-' + Date.now();
-        await db.collection('patients').doc(otherPatientId).set({
+      it("deve retornar 403 se tentar acessar histórico de outro parceiro", async () => {
+        const otherPatientId = "other-patient-history-" + Date.now();
+        await db.collection("patients").doc(otherPatientId).set({
           partnerId: otherPartnerId,
-          name: 'Other Patient',
-          dateOfBirth: new Date('1995-01-01'),
-          status: 'active',
+          name: "Other Patient",
+          dateOfBirth: new Date("1995-01-01"),
+          status: "active",
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -289,29 +265,29 @@ describe('📊 Adherence Routes - Integration Tests', () => {
     });
   });
 
-  describe('POST /v1/adherence/confirm', () => {
-    describe('✅ Cenários Positivos', () => {
-      it('deve confirmar dose tomada com dados completos', async () => {
+  describe("POST /v1/adherence/confirm", () => {
+    describe("✅ Cenários Positivos", () => {
+      it("deve confirmar dose tomada com dados completos", async () => {
         const doseData = {
           patientId: testPatientId,
           medicationId: testMedicationId,
           scheduledTime: new Date().toISOString(),
           takenAt: new Date().toISOString(),
-          notes: 'Tomado no horário',
+          notes: "Tomado no horário",
         };
 
         const response = await request(app)
-          .post('/v1/adherence/confirm')
+          .post("/v1/adherence/confirm")
           .send(doseData);
 
         expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty('id');
+        expect(response.body).toHaveProperty("id");
         expect(response.body.patientId).toBe(testPatientId);
         expect(response.body.medicationId).toBe(testMedicationId);
-        expect(response.body.status).toBe('taken');
+        expect(response.body.status).toBe("taken");
       });
 
-      it('deve confirmar dose com dados mínimos', async () => {
+      it("deve confirmar dose com dados mínimos", async () => {
         const doseData = {
           patientId: testPatientId,
           medicationId: testMedicationId,
@@ -319,19 +295,19 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         };
 
         const response = await request(app)
-          .post('/v1/adherence/confirm')
+          .post("/v1/adherence/confirm")
           .send(doseData);
 
         expect(response.status).toBe(201);
-        expect(response.body).toHaveProperty('id');
-        expect(response.body.status).toBe('taken');
+        expect(response.body).toHaveProperty("id");
+        expect(response.body.status).toBe("taken");
       });
     });
 
-    describe('❌ Cenários Negativos', () => {
-      it('deve retornar 400 se patientId está faltando', async () => {
+    describe("❌ Cenários Negativos", () => {
+      it("deve retornar 400 se patientId está faltando", async () => {
         const response = await request(app)
-          .post('/v1/adherence/confirm')
+          .post("/v1/adherence/confirm")
           .send({
             medicationId: testMedicationId,
             scheduledTime: new Date().toISOString(),
@@ -341,9 +317,9 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.error).toBeDefined();
       });
 
-      it('deve retornar 400 se medicationId está faltando', async () => {
+      it("deve retornar 400 se medicationId está faltando", async () => {
         const response = await request(app)
-          .post('/v1/adherence/confirm')
+          .post("/v1/adherence/confirm")
           .send({
             patientId: testPatientId,
             scheduledTime: new Date().toISOString(),
@@ -353,9 +329,9 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.error).toBeDefined();
       });
 
-      it('deve retornar 400 se scheduledTime está faltando', async () => {
+      it("deve retornar 400 se scheduledTime está faltando", async () => {
         const response = await request(app)
-          .post('/v1/adherence/confirm')
+          .post("/v1/adherence/confirm")
           .send({
             patientId: testPatientId,
             medicationId: testMedicationId,
@@ -365,11 +341,11 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.error).toBeDefined();
       });
 
-      it('deve retornar 404 se paciente não existe', async () => {
+      it("deve retornar 404 se paciente não existe", async () => {
         const response = await request(app)
-          .post('/v1/adherence/confirm')
+          .post("/v1/adherence/confirm")
           .send({
-            patientId: 'nonexistent-patient',
+            patientId: "nonexistent-patient",
             medicationId: testMedicationId,
             scheduledTime: new Date().toISOString(),
           });
@@ -378,12 +354,12 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.error).toBeDefined();
       });
 
-      it('deve retornar 404 se medicação não existe', async () => {
+      it("deve retornar 404 se medicação não existe", async () => {
         const response = await request(app)
-          .post('/v1/adherence/confirm')
+          .post("/v1/adherence/confirm")
           .send({
             patientId: testPatientId,
-            medicationId: 'nonexistent-medication',
+            medicationId: "nonexistent-medication",
             scheduledTime: new Date().toISOString(),
           });
 
@@ -391,19 +367,19 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.error).toBeDefined();
       });
 
-      it('deve retornar 403 se tentar confirmar dose para paciente de outro parceiro', async () => {
-        const otherPatientId = 'other-patient-confirm-' + Date.now();
-        await db.collection('patients').doc(otherPatientId).set({
+      it("deve retornar 403 se tentar confirmar dose para paciente de outro parceiro", async () => {
+        const otherPatientId = "other-patient-confirm-" + Date.now();
+        await db.collection("patients").doc(otherPatientId).set({
           partnerId: otherPartnerId,
-          name: 'Other Patient',
-          dateOfBirth: new Date('1995-01-01'),
-          status: 'active',
+          name: "Other Patient",
+          dateOfBirth: new Date("1995-01-01"),
+          status: "active",
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
         const response = await request(app)
-          .post('/v1/adherence/confirm')
+          .post("/v1/adherence/confirm")
           .send({
             patientId: otherPatientId,
             medicationId: testMedicationId,
@@ -414,21 +390,21 @@ describe('📊 Adherence Routes - Integration Tests', () => {
         expect(response.body.error).toBeDefined();
       });
 
-      it('deve retornar 403 se tentar confirmar dose com medicação de outro parceiro', async () => {
-        const otherMedicationId = 'other-medication-' + Date.now();
-        await db.collection('medications').doc(otherMedicationId).set({
+      it("deve retornar 403 se tentar confirmar dose com medicação de outro parceiro", async () => {
+        const otherMedicationId = "other-medication-" + Date.now();
+        await db.collection("medications").doc(otherMedicationId).set({
           partnerId: otherPartnerId,
           patientId: testPatientId,
-          name: 'Other Medication',
-          dosage: '20mg',
-          frequency: 'daily',
-          status: 'active',
+          name: "Other Medication",
+          dosage: "20mg",
+          frequency: "daily",
+          status: "active",
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
         const response = await request(app)
-          .post('/v1/adherence/confirm')
+          .post("/v1/adherence/confirm")
           .send({
             patientId: testPatientId,
             medicationId: otherMedicationId,

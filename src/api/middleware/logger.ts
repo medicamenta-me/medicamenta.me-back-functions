@@ -2,8 +2,8 @@
  * 📝 Request Logger Middleware
  */
 
-import { Request, Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
+import { Request, Response, NextFunction } from "express";
+import * as admin from "firebase-admin";
 
 const db = admin.firestore();
 
@@ -16,8 +16,8 @@ export function requestLogger(
   const requestId = generateRequestId();
 
   // Add request ID to headers
-  req.headers['x-request-id'] = requestId;
-  res.setHeader('X-Request-ID', requestId);
+  req.headers["x-request-id"] = requestId;
+  res.setHeader("X-Request-ID", requestId);
 
   // Log request
   const requestLog = {
@@ -26,13 +26,13 @@ export function requestLogger(
     path: req.path,
     query: req.query,
     headers: sanitizeHeaders(req.headers),
-    ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
-    userAgent: req.headers['user-agent'],
+    ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+    userAgent: req.headers["user-agent"],
     timestamp: new Date(),
   };
 
   // Log response after it's sent
-  res.on('finish', () => {
+  res.on("finish", () => {
     const duration = Date.now() - startTime;
     
     const responseLog = {
@@ -60,7 +60,7 @@ function sanitizeHeaders(headers: any): any {
   
   // Remove sensitive data
   delete sanitized.authorization;
-  delete sanitized['x-api-key'];
+  delete sanitized["x-api-key"];
   delete sanitized.cookie;
   
   return sanitized;
@@ -72,9 +72,9 @@ function generateRequestId(): string {
 
 async function logToFirestore(log: any): Promise<void> {
   // Only log in production, or sample 10% in development
-  if (process.env.NODE_ENV !== 'production' && Math.random() > 0.1) {
+  if (process.env.NODE_ENV !== "production" && Math.random() > 0.1) {
     return;
   }
 
-  await db.collection('api_logs').add(log);
+  await db.collection("api_logs").add(log);
 }

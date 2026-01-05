@@ -1,26 +1,37 @@
-import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
-import Stripe from 'stripe';
+import * as functions from "firebase-functions";
+import * as admin from "firebase-admin";
+import Stripe from "stripe";
 
 // Initialize Firebase Admin
 admin.initializeApp();
 const db = admin.firestore();
 
 // Export Public API
-export * from './api';
+export * from "./api";
 
 // Export Stripe functions
-export * from './stripe-functions';
+export * from "./stripe-functions";
 
 // Export PagSeguro functions
-export * from './pagseguro-functions';
+export * from "./pagseguro-functions";
 
 // Export OCR Cloud Vision functions
-export * from './ocr-cloud-vision';
+export * from "./ocr-cloud-vision";
+
+// Export Firestore Triggers
+export {
+  onOrderCreated,
+  onOrderStatusUpdated,
+  onPharmacyCreated,
+  onPharmacyStatusUpdated,
+  onProductCreated,
+  onProductUpdated,
+  onProductDeleted,
+} from "./triggers";
 
 // Initialize Stripe
 // Get Stripe secret key from environment config
-const stripeSecretKey = functions.config().stripe?.secret_key || process.env.STRIPE_SECRET_KEY || '';
+const stripeSecretKey = functions.config().stripe?.secret_key || process.env.STRIPE_SECRET_KEY || "";
 const stripe = new Stripe(stripeSecretKey);
 
 /**
@@ -29,12 +40,12 @@ const stripe = new Stripe(stripeSecretKey);
  */
 const PRICE_IDS = {
   premium: {
-    monthly: functions.config().stripe?.premium_monthly || 'price_premium_monthly_brl',
-    yearly: functions.config().stripe?.premium_yearly || 'price_premium_yearly_brl'
+    monthly: functions.config().stripe?.premium_monthly || "price_premium_monthly_brl",
+    yearly: functions.config().stripe?.premium_yearly || "price_premium_yearly_brl"
   },
   family: {
-    monthly: functions.config().stripe?.family_monthly || 'price_family_monthly_brl',
-    yearly: functions.config().stripe?.family_yearly || 'price_family_yearly_brl'
+    monthly: functions.config().stripe?.family_monthly || "price_family_monthly_brl",
+    yearly: functions.config().stripe?.family_yearly || "price_family_yearly_brl"
   }
 };
 
@@ -42,11 +53,11 @@ const PRICE_IDS = {
  * Map plan and interval to Stripe price ID
  */
 function getPriceId(plan: string, billingInterval: string): string {
-  if (plan === 'premium') {
-    return billingInterval === 'yearly' ? PRICE_IDS.premium.yearly : PRICE_IDS.premium.monthly;
+  if (plan === "premium") {
+    return billingInterval === "yearly" ? PRICE_IDS.premium.yearly : PRICE_IDS.premium.monthly;
   }
-  if (plan === 'family') {
-    return billingInterval === 'yearly' ? PRICE_IDS.family.yearly : PRICE_IDS.family.monthly;
+  if (plan === "family") {
+    return billingInterval === "yearly" ? PRICE_IDS.family.yearly : PRICE_IDS.family.monthly;
   }
   throw new Error(`Invalid plan: ${plan}`);
 }
@@ -78,14 +89,14 @@ async function getOrCreateCustomer(userId: string, email: string, name?: string)
     id: customer.id,
     userId,
     email,
-    name: name || '',
+    name: name || "",
     created: customer.created,
     metadata: {
       firebaseUid: userId
     }
   });
 
-  console.log('[Stripe] Created customer:', customer.id);
+  console.log("[Stripe] Created customer:", customer.id);
   return customer.id;
 }
 
@@ -102,13 +113,13 @@ async function getOrCreateCustomer(userId: string, email: string, name?: string)
  * Triggered when a new document is created in /users/{userId}/checkout_sessions/{sessionId}
  */
 export const createStripeCheckoutSession = functions.firestore
-  .document('users/{userId}/checkout_sessions/{sessionId}')
+  .document("users/{userId}/checkout_sessions/{sessionId}")
   .onCreate(async (snap: FirebaseFirestore.QueryDocumentSnapshot, context: functions.EventContext) => {
     const { userId } = context.params;
     const data = snap.data();
 
     try {
-      console.log('[Stripe] Creating checkout session for user:', userId);
+      console.log("[Stripe] Creating checkout session for user:", userId);
 
       // Get or create Stripe customer
       const customerId = await getOrCreateCustomer(userId, data.email, data.name);
@@ -119,15 +130,15 @@ export const createStripeCheckoutSession = functions.firestore
       // Create Stripe checkout session
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
-        mode: 'subscription',
-        payment_method_types: ['card'],
+        mode: "subscription",
+        payment_method_types: ["card"],
         line_items: [
           {
             price: priceId,
             quantity: 1
           }
         ],
-        success_url: data.successUrl + '?session_id={CHECKOUT_SESSION_ID}',
+        success_url: data.successUrl + "?session_id={CHECKOUT_SESSION_ID}",
         cancel_url: data.cancelUrl,
         subscription_data: {
           trial_period_days: data.trialPeriodDays || 7,
@@ -148,19 +159,19 @@ export const createStripeCheckoutSession = functions.firestore
       await snap.ref.update({
         sessionId: session.id,
         url: session.url,
-        status: 'created',
+        status: "created",
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      console.log('[Stripe] Checkout session created:', session.id);
+      console.log("[Stripe] Checkout session created:", session.id);
 
     } catch (error: any) {
-      console.error('[Stripe] Error creating checkout session:', error);
+      console.error("[Stripe] Error creating checkout session:", error);
       
       // Update document with error
       await snap.ref.update({
         error: error.message,
-        status: 'error',
+        status: "error",
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
     }
@@ -172,20 +183,20 @@ export const createStripeCheckoutSession = functions.firestore
  * Triggered when a new document is created in /users/{userId}/billing_portal_sessions/{sessionId}
  */
 export const createStripeBillingPortalSession = functions.firestore
-  .document('users/{userId}/billing_portal_sessions/{sessionId}')
+  .document("users/{userId}/billing_portal_sessions/{sessionId}")
   .onCreate(async (snap: FirebaseFirestore.QueryDocumentSnapshot, context: functions.EventContext) => {
     const { userId } = context.params;
     const data = snap.data();
 
     try {
-      console.log('[Stripe] Creating billing portal session for user:', userId);
+      console.log("[Stripe] Creating billing portal session for user:", userId);
 
       // Get customer ID
       const customerRef = db.doc(`users/${userId}/stripe_customer/data`);
       const customerSnap = await customerRef.get();
 
       if (!customerSnap.exists) {
-        throw new Error('No Stripe customer found for user');
+        throw new Error("No Stripe customer found for user");
       }
 
       const customerData = customerSnap.data();
@@ -201,18 +212,18 @@ export const createStripeBillingPortalSession = functions.firestore
       await snap.ref.update({
         sessionId: session.id,
         url: session.url,
-        status: 'created',
+        status: "created",
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      console.log('[Stripe] Billing portal session created:', session.id);
+      console.log("[Stripe] Billing portal session created:", session.id);
 
     } catch (error: any) {
-      console.error('[Stripe] Error creating billing portal session:', error);
+      console.error("[Stripe] Error creating billing portal session:", error);
       
       await snap.ref.update({
         error: error.message,
-        status: 'error',
+        status: "error",
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
     }
@@ -223,58 +234,59 @@ export const createStripeBillingPortalSession = functions.firestore
  * Cloud Function: Handle Stripe Webhooks
  * HTTP endpoint that receives webhook events from Stripe
  */
-export const handleStripeWebhook = functions.https.onRequest(async (req: functions.https.Request, res: functions.Response) => {
-  const sig = req.headers['stripe-signature'] as string;
-  const webhookSecret = functions.config().stripe?.webhook_secret || process.env.STRIPE_WEBHOOK_SECRET || '';
+export const handleStripeWebhook = functions.https.onRequest(
+  async (req: functions.https.Request, res: functions.Response) => {
+    const sig = req.headers["stripe-signature"] as string;
+    const webhookSecret = functions.config().stripe?.webhook_secret || process.env.STRIPE_WEBHOOK_SECRET || "";
 
-  let event: Stripe.Event;
+    let event: Stripe.Event;
 
-  try {
+    try {
     // Verify webhook signature
-    event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
-  } catch (error: any) {
-    console.error('[Stripe Webhook] Signature verification failed:', error.message);
-    res.status(400).send(`Webhook Error: ${error.message}`);
-    return;
-  }
+      event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
+    } catch (error: any) {
+      console.error("[Stripe Webhook] Signature verification failed:", error.message);
+      res.status(400).send(`Webhook Error: ${error.message}`);
+      return;
+    }
 
-  console.log('[Stripe Webhook] Received event:', event.type);
+    console.log("[Stripe Webhook] Received event:", event.type);
 
-  try {
+    try {
     // Handle different event types
-    switch (event.type) {
-      case 'checkout.session.completed':
+      switch (event.type) {
+      case "checkout.session.completed":
         await handleCheckoutSessionCompleted(event.data.object);
         break;
 
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
         await handleSubscriptionUpdate(event.data.object);
         break;
 
-      case 'customer.subscription.deleted':
+      case "customer.subscription.deleted":
         await handleSubscriptionDeleted(event.data.object);
         break;
 
-      case 'invoice.payment_succeeded':
+      case "invoice.payment_succeeded":
         await handleInvoicePaymentSucceeded(event.data.object);
         break;
 
-      case 'invoice.payment_failed':
+      case "invoice.payment_failed":
         await handleInvoicePaymentFailed(event.data.object);
         break;
 
       default:
-        console.log('[Stripe Webhook] Unhandled event type:', event.type);
+        console.log("[Stripe Webhook] Unhandled event type:", event.type);
+      }
+
+      res.json({ received: true });
+
+    } catch (error: any) {
+      console.error("[Stripe Webhook] Error processing event:", error);
+      res.status(500).send(`Webhook Error: ${error.message}`);
     }
-
-    res.json({ received: true });
-
-  } catch (error: any) {
-    console.error('[Stripe Webhook] Error processing event:', error);
-    res.status(500).send(`Webhook Error: ${error.message}`);
-  }
-});
+  });
 
 /* istanbul ignore next - Legacy webhook handler helper */
 /**
@@ -284,13 +296,13 @@ export const handleStripeWebhook = functions.https.onRequest(async (req: functio
 async function handleCheckoutSessionCompleted(session: any): Promise<void> {
   const userId = session.metadata?.firebaseUid;
   if (!userId) {
-    console.error('[Stripe] No firebaseUid in session metadata');
+    console.error("[Stripe] No firebaseUid in session metadata");
     return;
   }
 
-  const plan = session.metadata?.plan as 'premium' | 'family';
+  const plan = session.metadata?.plan as "premium" | "family";
 
-  console.log('[Stripe] Checkout completed for user:', userId, '| Plan:', plan);
+  console.log("[Stripe] Checkout completed for user:", userId, "| Plan:", plan);
 
   // Get subscription details
   const subscriptionId = session.subscription as string;
@@ -300,7 +312,7 @@ async function handleCheckoutSessionCompleted(session: any): Promise<void> {
   const subscriptionRef = db.doc(`users/${userId}/subscription/current`);
   await subscriptionRef.set({
     plan,
-    status: subscription.status === 'trialing' ? 'trialing' : 'active',
+    status: subscription.status === "trialing" ? "trialing" : "active",
     features: {}, // Will be set by client based on plan
     stripeSubscriptionId: subscription.id,
     stripeCustomerId: subscription.customer as string,
@@ -322,7 +334,7 @@ async function handleCheckoutSessionCompleted(session: any): Promise<void> {
     metadata: subscription.metadata
   });
 
-  console.log('[Stripe] Subscription activated for user:', userId);
+  console.log("[Stripe] Subscription activated for user:", userId);
 }
 
 /* istanbul ignore next - Legacy webhook handler helper */
@@ -332,20 +344,20 @@ async function handleCheckoutSessionCompleted(session: any): Promise<void> {
 async function handleSubscriptionUpdate(subscription: any): Promise<void> {
   const userId = subscription.metadata?.firebaseUid;
   if (!userId) {
-    console.error('[Stripe] No firebaseUid in subscription metadata');
+    console.error("[Stripe] No firebaseUid in subscription metadata");
     return;
   }
 
-  console.log('[Stripe] Subscription updated for user:', userId, '| Status:', subscription.status);
+  console.log("[Stripe] Subscription updated for user:", userId, "| Status:", subscription.status);
 
   // Map subscription status to our internal status
-  let status: 'active' | 'trialing' | 'canceled';
-  if (subscription.status === 'trialing') {
-    status = 'trialing';
-  } else if (subscription.status === 'active') {
-    status = 'active';
+  let status: "active" | "trialing" | "canceled";
+  if (subscription.status === "trialing") {
+    status = "trialing";
+  } else if (subscription.status === "active") {
+    status = "active";
   } else {
-    status = 'canceled';
+    status = "canceled";
   }
 
   // Update subscription in Firestore
@@ -375,17 +387,17 @@ async function handleSubscriptionUpdate(subscription: any): Promise<void> {
 async function handleSubscriptionDeleted(subscription: any): Promise<void> {
   const userId = subscription.metadata?.firebaseUid;
   if (!userId) {
-    console.error('[Stripe] No firebaseUid in subscription metadata');
+    console.error("[Stripe] No firebaseUid in subscription metadata");
     return;
   }
 
-  console.log('[Stripe] Subscription deleted for user:', userId);
+  console.log("[Stripe] Subscription deleted for user:", userId);
 
   // Downgrade to free plan
   const subscriptionRef = db.doc(`users/${userId}/subscription/current`);
   await subscriptionRef.update({
-    plan: 'free',
-    status: 'canceled',
+    plan: "free",
+    status: "canceled",
     stripeSubscriptionId: null,
     canceledAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -404,24 +416,24 @@ async function handleInvoicePaymentSucceeded(invoice: any): Promise<void> {
   const customerId = invoice.customer as string;
   
   // Find user by customer ID
-  const customersSnapshot = await db.collectionGroup('stripe_customer')
-    .where('id', '==', customerId)
+  const customersSnapshot = await db.collectionGroup("stripe_customer")
+    .where("id", "==", customerId)
     .limit(1)
     .get();
 
   if (customersSnapshot.empty) {
-    console.error('[Stripe] No user found for customer:', customerId);
+    console.error("[Stripe] No user found for customer:", customerId);
     return;
   }
 
   const userId = customersSnapshot.docs[0].ref.parent.parent!.id;
 
-  console.log('[Stripe] Invoice payment succeeded for user:', userId);
+  console.log("[Stripe] Invoice payment succeeded for user:", userId);
 
   // Update payment status
   const subscriptionRef = db.doc(`users/${userId}/subscription/current`);
   await subscriptionRef.update({
-    status: 'active',
+    status: "active",
     lastPaymentAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   });
@@ -435,24 +447,24 @@ async function handleInvoicePaymentFailed(invoice: any): Promise<void> {
   const customerId = invoice.customer as string;
   
   // Find user by customer ID
-  const customersSnapshot = await db.collectionGroup('stripe_customer')
-    .where('id', '==', customerId)
+  const customersSnapshot = await db.collectionGroup("stripe_customer")
+    .where("id", "==", customerId)
     .limit(1)
     .get();
 
   if (customersSnapshot.empty) {
-    console.error('[Stripe] No user found for customer:', customerId);
+    console.error("[Stripe] No user found for customer:", customerId);
     return;
   }
 
   const userId = customersSnapshot.docs[0].ref.parent.parent!.id;
 
-  console.log('[Stripe] Invoice payment failed for user:', userId);
+  console.log("[Stripe] Invoice payment failed for user:", userId);
 
   // Update payment status
   const subscriptionRef = db.doc(`users/${userId}/subscription/current`);
   await subscriptionRef.update({
-    status: 'past_due',
+    status: "past_due",
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   });
 

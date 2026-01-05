@@ -8,16 +8,16 @@
  */
 
 // @ts-nocheck
-import * as admin from 'firebase-admin';
-import functionsTest from 'firebase-functions-test';
-import { describe, expect, it, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
+import * as admin from "firebase-admin";
+import functionsTest from "firebase-functions-test";
+import { describe, expect, it, beforeAll, afterAll, beforeEach, jest } from "@jest/globals";
 
 const test = functionsTest();
 
 // Mock Stripe
 const mockStripeBillingPortalSessionsCreate = jest.fn();
 
-jest.mock('stripe', () => {
+jest.mock("stripe", () => {
   return jest.fn().mockImplementation(() => ({
     billingPortal: {
       sessions: {
@@ -28,19 +28,19 @@ jest.mock('stripe', () => {
 });
 
 // Set STRIPE_SECRET_KEY before importing function
-process.env.STRIPE_SECRET_KEY = 'sk_test_mock_key';
+process.env.STRIPE_SECRET_KEY = "sk_test_mock_key";
 
 // Import function after mocking
-import { createStripeCustomerPortal } from '../../stripe-functions';
+import { createStripeCustomerPortal } from "../../stripe-functions";
 
-describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
+describe("🔵 Stripe Functions - createStripeCustomerPortal", () => {
   let wrapped: any;
-  const testUserId = 'test-user-portal-123';
-  const testCustomerId = 'cus_portal_test';
-  const testReturnUrl = 'https://medicamenta.me/settings';
+  const testUserId = "test-user-portal-123";
+  const testCustomerId = "cus_portal_test";
+  const testReturnUrl = "https://medicamenta.me/settings";
 
   beforeAll(() => {
-    // Firebase Admin j� inicializado no setup.ts global
+    // Firebase Admin j� inicializado no setup.ts global
 
     wrapped = test.wrap(createStripeCustomerPortal);
   });
@@ -53,12 +53,12 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
     jest.clearAllMocks();
   });
 
-  describe('✅ Cenários Positivos', () => {
-    it('deve criar sessão do customer portal', async () => {
+  describe("✅ Cenários Positivos", () => {
+    it("deve criar sessão do customer portal", async () => {
       // Arrange
       const mockSession = {
-        id: 'bps_test_123',
-        url: 'https://billing.stripe.com/session/test_123',
+        id: "bps_test_123",
+        url: "https://billing.stripe.com/session/test_123",
         customer: testCustomerId,
         return_url: testReturnUrl,
       };
@@ -73,7 +73,7 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -88,11 +88,11 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       });
     });
 
-    it('deve criar sessão com returnUrl padrão', async () => {
+    it("deve criar sessão com returnUrl padrão", async () => {
       // Arrange
       const mockSession = {
-        id: 'bps_test_456',
-        url: 'https://billing.stripe.com/session/test_456',
+        id: "bps_test_456",
+        url: "https://billing.stripe.com/session/test_456",
         customer: testCustomerId,
       };
 
@@ -106,7 +106,7 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -118,10 +118,10 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       expect(mockStripeBillingPortalSessionsCreate).toHaveBeenCalled();
     });
 
-    it('deve retornar URL válida do portal', async () => {
+    it("deve retornar URL válida do portal", async () => {
       // Arrange
       const mockSession = {
-        url: 'https://billing.stripe.com/p/session_abcd1234',
+        url: "https://billing.stripe.com/p/session_abcd1234",
       };
 
       mockStripeBillingPortalSessionsCreate.mockResolvedValue(mockSession);
@@ -134,7 +134,7 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -146,8 +146,8 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
     });
   });
 
-  describe('❌ Cenários Negativos', () => {
-    it('deve retornar erro se não autenticado', async () => {
+  describe("❌ Cenários Negativos", () => {
+    it("deve retornar erro se não autenticado", async () => {
       const data = {
         customerId: testCustomerId,
         returnUrl: testReturnUrl,
@@ -156,11 +156,11 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       const context = { auth: undefined };
 
       await expect(wrapped(data, context)).rejects.toThrow(
-        'User must be authenticated'
+        "User must be authenticated"
       );
     });
 
-    it('deve retornar erro se customerId ausente', async () => {
+    it("deve retornar erro se customerId ausente", async () => {
       const data = {
         returnUrl: testReturnUrl,
       };
@@ -168,31 +168,31 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
       await expect(wrapped(data, context)).rejects.toThrow(
-        'Missing customerId'
+        "Missing customerId"
       );
     });
 
-    it('deve retornar erro se customer não encontrado', async () => {
+    it("deve retornar erro se customer não encontrado", async () => {
       // Arrange
       mockStripeBillingPortalSessionsCreate.mockRejectedValue({
-        type: 'StripeInvalidRequestError',
-        message: 'No such customer: cus_invalid',
+        type: "StripeInvalidRequestError",
+        message: "No such customer: cus_invalid",
       });
 
       const data = {
-        customerId: 'cus_invalid',
+        customerId: "cus_invalid",
         returnUrl: testReturnUrl,
       };
 
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -201,11 +201,11 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
     });
   });
 
-  describe('⚠️ Edge Cases', () => {
-    it('deve lidar com erro da API Stripe', async () => {
+  describe("⚠️ Edge Cases", () => {
+    it("deve lidar com erro da API Stripe", async () => {
       // Arrange
       mockStripeBillingPortalSessionsCreate.mockRejectedValue(
-        new Error('Stripe API Error: Service temporarily unavailable')
+        new Error("Stripe API Error: Service temporarily unavailable")
       );
 
       const data = {
@@ -216,7 +216,7 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -224,11 +224,11 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       await expect(wrapped(data, context)).rejects.toThrow();
     });
 
-    it('deve lidar com returnUrl com caracteres especiais', async () => {
+    it("deve lidar com returnUrl com caracteres especiais", async () => {
       // Arrange
-      const specialReturnUrl = 'https://medicamenta.me/settings?user=test&lang=pt-BR';
+      const specialReturnUrl = "https://medicamenta.me/settings?user=test&lang=pt-BR";
       const mockSession = {
-        url: 'https://billing.stripe.com/session/special',
+        url: "https://billing.stripe.com/session/special",
       };
 
       mockStripeBillingPortalSessionsCreate.mockResolvedValue(mockSession);
@@ -241,7 +241,7 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -256,10 +256,10 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       });
     });
 
-    it('deve lidar com customer sem subscription ativa', async () => {
+    it("deve lidar com customer sem subscription ativa", async () => {
       // Arrange
       const mockSession = {
-        url: 'https://billing.stripe.com/session/no_sub',
+        url: "https://billing.stripe.com/session/no_sub",
       };
 
       mockStripeBillingPortalSessionsCreate.mockResolvedValue(mockSession);
@@ -272,7 +272,7 @@ describe('🔵 Stripe Functions - createStripeCustomerPortal', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 

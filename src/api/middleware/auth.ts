@@ -7,10 +7,10 @@
  * - API Key (X-API-Key header)
  */
 
-import { Request, Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
-import jwt from 'jsonwebtoken';
-import { ApiError } from '../utils/api-error';
+import { Request, Response, NextFunction } from "express";
+import * as admin from "firebase-admin";
+import jwt from "jsonwebtoken";
+import { ApiError } from "../utils/api-error";
 
 // Extend Express Request to include user info
 declare global {
@@ -27,7 +27,7 @@ declare global {
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
 /**
  * Authenticate request using Bearer token
@@ -41,18 +41,18 @@ export async function authenticate(
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
-      throw new ApiError(401, 'UNAUTHORIZED', 'Missing authorization header');
+      throw new ApiError(401, "UNAUTHORIZED", "Missing authorization header");
     }
 
     // Extract token from "Bearer <token>"
-    const [scheme, token] = authHeader.split(' ');
+    const [scheme, token] = authHeader.split(" ");
 
-    if (scheme !== 'Bearer') {
-      throw new ApiError(401, 'UNAUTHORIZED', 'Invalid authorization scheme. Use Bearer token');
+    if (scheme !== "Bearer") {
+      throw new ApiError(401, "UNAUTHORIZED", "Invalid authorization scheme. Use Bearer token");
     }
 
     if (!token) {
-      throw new ApiError(401, 'UNAUTHORIZED', 'Missing token');
+      throw new ApiError(401, "UNAUTHORIZED", "Missing token");
     }
 
     // Try Firebase ID token first
@@ -67,7 +67,7 @@ export async function authenticate(
       };
 
       return next();
-    } catch (firebaseError) {
+    } catch (_firebaseError) {
       // Not a Firebase token, try JWT
     }
 
@@ -84,8 +84,8 @@ export async function authenticate(
       };
 
       return next();
-    } catch (jwtError) {
-      throw new ApiError(401, 'UNAUTHORIZED', 'Invalid or expired token');
+    } catch (_jwtError) {
+      throw new ApiError(401, "UNAUTHORIZED", "Invalid or expired token");
     }
 
   } catch (error) {
@@ -104,9 +104,9 @@ export function generateAccessToken(payload: {
   apiKeyId?: string;
 }): string {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: '24h',
-    issuer: 'medicamenta.me',
-    audience: 'medicamenta-api',
+    expiresIn: "24h",
+    issuer: "medicamenta.me",
+    audience: "medicamenta-api",
   });
 }
 
@@ -115,9 +115,9 @@ export function generateAccessToken(payload: {
  */
 export function generateRefreshToken(payload: { sub: string }): string {
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: '30d',
-    issuer: 'medicamenta.me',
-    audience: 'medicamenta-api',
+    expiresIn: "30d",
+    issuer: "medicamenta.me",
+    audience: "medicamenta-api",
   });
 }
 
@@ -126,8 +126,8 @@ export function generateRefreshToken(payload: { sub: string }): string {
  */
 export function verifyRefreshToken(token: string): any {
   return jwt.verify(token, JWT_SECRET, {
-    issuer: 'medicamenta.me',
-    audience: 'medicamenta-api',
+    issuer: "medicamenta.me",
+    audience: "medicamenta-api",
   });
 }
 
@@ -137,19 +137,19 @@ export function verifyRefreshToken(token: string): any {
 export function requirePermissions(...requiredPermissions: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return next(new ApiError(401, 'UNAUTHORIZED', 'Authentication required'));
+      return next(new ApiError(401, "UNAUTHORIZED", "Authentication required"));
     }
 
     const userPermissions = req.user.permissions || [];
     const hasPermission = requiredPermissions.every(
-      perm => userPermissions.includes(perm) || userPermissions.includes('admin')
+      perm => userPermissions.includes(perm) || userPermissions.includes("admin")
     );
 
     if (!hasPermission) {
       return next(new ApiError(
         403,
-        'FORBIDDEN',
-        `Missing required permissions: ${requiredPermissions.join(', ')}`
+        "FORBIDDEN",
+        `Missing required permissions: ${requiredPermissions.join(", ")}`
       ));
     }
 

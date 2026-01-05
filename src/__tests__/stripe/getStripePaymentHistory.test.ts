@@ -9,16 +9,16 @@
  */
 
 // @ts-nocheck
-import * as admin from 'firebase-admin';
-import functionsTest from 'firebase-functions-test';
-import { describe, expect, it, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
+import * as admin from "firebase-admin";
+import functionsTest from "firebase-functions-test";
+import { describe, expect, it, beforeAll, afterAll, beforeEach, jest } from "@jest/globals";
 
 const test = functionsTest();
 
 // Mock Stripe
 const mockStripeInvoicesList = jest.fn();
 
-jest.mock('stripe', () => {
+jest.mock("stripe", () => {
   return jest.fn().mockImplementation(() => ({
     invoices: {
       list: mockStripeInvoicesList,
@@ -27,18 +27,18 @@ jest.mock('stripe', () => {
 });
 
 // Set STRIPE_SECRET_KEY before importing function
-process.env.STRIPE_SECRET_KEY = 'sk_test_mock_key';
+process.env.STRIPE_SECRET_KEY = "sk_test_mock_key";
 
 // Import function after mocking
-import { getStripePaymentHistory } from '../../stripe-functions';
+import { getStripePaymentHistory } from "../../stripe-functions";
 
-describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
+describe("🔵 Stripe Functions - getStripePaymentHistory", () => {
   let wrapped: any;
-  const testUserId = 'test-user-invoices-123';
-  const testCustomerId = 'cus_invoices_test';
+  const testUserId = "test-user-invoices-123";
+  const testCustomerId = "cus_invoices_test";
 
   beforeAll(() => {
-    // Firebase Admin j� inicializado no setup.ts global
+    // Firebase Admin j� inicializado no setup.ts global
 
     wrapped = test.wrap(getStripePaymentHistory);
   });
@@ -51,26 +51,26 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
     jest.clearAllMocks();
   });
 
-  describe('✅ Cenários Positivos', () => {
-    it('deve listar faturas do cliente com limit padrão', async () => {
+  describe("✅ Cenários Positivos", () => {
+    it("deve listar faturas do cliente com limit padrão", async () => {
       // Arrange
       const mockInvoices = {
         data: [
           {
-            id: 'in_test_1',
+            id: "in_test_1",
             amount_paid: 2990, // R$ 29.90 em centavos
-            currency: 'brl',
-            status: 'paid',
+            currency: "brl",
+            status: "paid",
             created: 1704067200, // 2024-01-01
-            invoice_pdf: 'https://invoice.stripe.com/pdf_1',
+            invoice_pdf: "https://invoice.stripe.com/pdf_1",
           },
           {
-            id: 'in_test_2',
+            id: "in_test_2",
             amount_paid: 4990, // R$ 49.90
-            currency: 'brl',
-            status: 'paid',
+            currency: "brl",
+            status: "paid",
             created: 1701388800, // 2023-12-01
-            invoice_pdf: 'https://invoice.stripe.com/pdf_2',
+            invoice_pdf: "https://invoice.stripe.com/pdf_2",
           },
         ],
       };
@@ -84,7 +84,7 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -93,10 +93,10 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
 
       // Assert
       expect(result.invoices).toHaveLength(2);
-      expect(result.invoices[0].id).toBe('in_test_1');
+      expect(result.invoices[0].id).toBe("in_test_1");
       expect(result.invoices[0].amount).toBe(29.9);
-      expect(result.invoices[0].currency).toBe('brl');
-      expect(result.invoices[0].status).toBe('paid');
+      expect(result.invoices[0].currency).toBe("brl");
+      expect(result.invoices[0].status).toBe("paid");
       expect(result.invoices[0].pdfUrl).toBeDefined();
       expect(mockStripeInvoicesList).toHaveBeenCalledWith({
         customer: testCustomerId,
@@ -104,14 +104,14 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       });
     });
 
-    it('deve listar faturas com limit customizado', async () => {
+    it("deve listar faturas com limit customizado", async () => {
       // Arrange
       const mockInvoices = {
         data: Array.from({ length: 20 }, (_, i) => ({
           id: `in_test_${i}`,
           amount_paid: 2990,
-          currency: 'brl',
-          status: 'paid',
+          currency: "brl",
+          status: "paid",
           created: 1704067200,
           invoice_pdf: `https://invoice.stripe.com/pdf_${i}`,
         })),
@@ -127,7 +127,7 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -142,17 +142,17 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       });
     });
 
-    it('deve converter valores de centavos para reais corretamente', async () => {
+    it("deve converter valores de centavos para reais corretamente", async () => {
       // Arrange
       const mockInvoices = {
         data: [
           {
-            id: 'in_test_1',
+            id: "in_test_1",
             amount_paid: 9990, // R$ 99.90
-            currency: 'brl',
-            status: 'paid',
+            currency: "brl",
+            status: "paid",
             created: 1704067200,
-            invoice_pdf: 'https://invoice.stripe.com/pdf',
+            invoice_pdf: "https://invoice.stripe.com/pdf",
           },
         ],
       };
@@ -166,7 +166,7 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -177,17 +177,17 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       expect(result.invoices[0].amount).toBe(99.9);
     });
 
-    it('deve incluir todas as informações da fatura', async () => {
+    it("deve incluir todas as informações da fatura", async () => {
       // Arrange
       const mockInvoices = {
         data: [
           {
-            id: 'in_complete_test',
+            id: "in_complete_test",
             amount_paid: 5000,
-            currency: 'usd',
-            status: 'paid',
+            currency: "usd",
+            status: "paid",
             created: 1704067200,
-            invoice_pdf: 'https://invoice.stripe.com/pdf_complete',
+            invoice_pdf: "https://invoice.stripe.com/pdf_complete",
           },
         ],
       };
@@ -201,7 +201,7 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -210,17 +210,17 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
 
       // Assert
       const invoice = result.invoices[0];
-      expect(invoice).toHaveProperty('id');
-      expect(invoice).toHaveProperty('amount');
-      expect(invoice).toHaveProperty('currency');
-      expect(invoice).toHaveProperty('status');
-      expect(invoice).toHaveProperty('date');
-      expect(invoice).toHaveProperty('pdfUrl');
+      expect(invoice).toHaveProperty("id");
+      expect(invoice).toHaveProperty("amount");
+      expect(invoice).toHaveProperty("currency");
+      expect(invoice).toHaveProperty("status");
+      expect(invoice).toHaveProperty("date");
+      expect(invoice).toHaveProperty("pdfUrl");
     });
   });
 
-  describe('❌ Cenários Negativos', () => {
-    it('deve retornar erro se não autenticado', async () => {
+  describe("❌ Cenários Negativos", () => {
+    it("deve retornar erro se não autenticado", async () => {
       const data = {
         customerId: testCustomerId,
       };
@@ -228,11 +228,11 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = { auth: undefined };
 
       await expect(wrapped(data, context)).rejects.toThrow(
-        'User must be authenticated'
+        "User must be authenticated"
       );
     });
 
-    it('deve retornar erro se customerId ausente', async () => {
+    it("deve retornar erro se customerId ausente", async () => {
       const data = {
         limit: 10,
       };
@@ -240,30 +240,30 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
       await expect(wrapped(data, context)).rejects.toThrow(
-        'Missing customerId'
+        "Missing customerId"
       );
     });
 
-    it('deve retornar erro se customer não encontrado', async () => {
+    it("deve retornar erro se customer não encontrado", async () => {
       // Arrange
       mockStripeInvoicesList.mockRejectedValue({
-        type: 'StripeInvalidRequestError',
-        message: 'No such customer: cus_invalid',
+        type: "StripeInvalidRequestError",
+        message: "No such customer: cus_invalid",
       });
 
       const data = {
-        customerId: 'cus_invalid',
+        customerId: "cus_invalid",
       };
 
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -272,8 +272,8 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
     });
   });
 
-  describe('⚠️ Edge Cases', () => {
-    it('deve retornar array vazio se cliente sem faturas', async () => {
+  describe("⚠️ Edge Cases", () => {
+    it("deve retornar array vazio se cliente sem faturas", async () => {
       // Arrange
       const mockInvoices = {
         data: [],
@@ -288,7 +288,7 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -299,31 +299,31 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       expect(result.invoices).toEqual([]);
     });
 
-    it('deve lidar com faturas de diferentes status', async () => {
+    it("deve lidar com faturas de diferentes status", async () => {
       // Arrange
       const mockInvoices = {
         data: [
           {
-            id: 'in_paid',
+            id: "in_paid",
             amount_paid: 2990,
-            currency: 'brl',
-            status: 'paid',
+            currency: "brl",
+            status: "paid",
             created: 1704067200,
-            invoice_pdf: 'https://invoice.stripe.com/pdf_paid',
+            invoice_pdf: "https://invoice.stripe.com/pdf_paid",
           },
           {
-            id: 'in_open',
+            id: "in_open",
             amount_paid: 0,
-            currency: 'brl',
-            status: 'open',
+            currency: "brl",
+            status: "open",
             created: 1704067200,
             invoice_pdf: null,
           },
           {
-            id: 'in_void',
+            id: "in_void",
             amount_paid: 0,
-            currency: 'brl',
-            status: 'void',
+            currency: "brl",
+            status: "void",
             created: 1704067200,
             invoice_pdf: null,
           },
@@ -339,7 +339,7 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -348,18 +348,18 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
 
       // Assert
       expect(result.invoices).toHaveLength(3);
-      expect(result.invoices.map(inv => inv.status)).toEqual(['paid', 'open', 'void']);
+      expect(result.invoices.map(inv => inv.status)).toEqual(["paid", "open", "void"]);
     });
 
-    it('deve lidar com faturas sem PDF', async () => {
+    it("deve lidar com faturas sem PDF", async () => {
       // Arrange
       const mockInvoices = {
         data: [
           {
-            id: 'in_no_pdf',
+            id: "in_no_pdf",
             amount_paid: 2990,
-            currency: 'brl',
-            status: 'draft',
+            currency: "brl",
+            status: "draft",
             created: 1704067200,
             invoice_pdf: null,
           },
@@ -375,7 +375,7 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -386,10 +386,10 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       expect(result.invoices[0].pdfUrl).toBeNull();
     });
 
-    it('deve lidar com erro da API Stripe', async () => {
+    it("deve lidar com erro da API Stripe", async () => {
       // Arrange
       mockStripeInvoicesList.mockRejectedValue(
-        new Error('Stripe API Error: Rate limit exceeded')
+        new Error("Stripe API Error: Rate limit exceeded")
       );
 
       const data = {
@@ -399,7 +399,7 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 
@@ -407,7 +407,7 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       await expect(wrapped(data, context)).rejects.toThrow();
     });
 
-    it('deve lidar com limit muito grande', async () => {
+    it("deve lidar com limit muito grande", async () => {
       // Arrange
       const mockInvoices = {
         data: [],
@@ -423,7 +423,7 @@ describe('🔵 Stripe Functions - getStripePaymentHistory', () => {
       const context = {
         auth: {
           uid: testUserId,
-          token: { email: 'test@example.com' },
+          token: { email: "test@example.com" },
         },
       };
 

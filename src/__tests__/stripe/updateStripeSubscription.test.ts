@@ -8,9 +8,9 @@
  */
 
 // @ts-nocheck
-import * as admin from 'firebase-admin';
-import functionsTest from 'firebase-functions-test';
-import { describe, expect, it, beforeAll, afterAll, beforeEach, jest } from '@jest/globals';
+import * as admin from "firebase-admin";
+import functionsTest from "firebase-functions-test";
+import { describe, expect, it, beforeAll, afterAll, beforeEach, jest } from "@jest/globals";
 
 const test = functionsTest();
 
@@ -18,7 +18,7 @@ const test = functionsTest();
 const mockStripeSubscriptionsRetrieve = jest.fn();
 const mockStripeSubscriptionsUpdate = jest.fn();
 
-jest.mock('stripe', () => {
+jest.mock("stripe", () => {
   return jest.fn().mockImplementation(() => ({
     subscriptions: {
       retrieve: mockStripeSubscriptionsRetrieve,
@@ -28,19 +28,19 @@ jest.mock('stripe', () => {
 });
 
 // Set STRIPE_SECRET_KEY before importing function (initializes Stripe SDK)
-process.env.STRIPE_SECRET_KEY = 'sk_test_mock_key';
+process.env.STRIPE_SECRET_KEY = "sk_test_mock_key";
 
 // Import function after mocking
-import { updateStripeSubscription } from '../../stripe-functions';
+import { updateStripeSubscription } from "../../stripe-functions";
 
-describe('🔵 Stripe Functions - updateStripeSubscription', () => {
+describe("🔵 Stripe Functions - updateStripeSubscription", () => {
   let wrapped: any;
-  const testSubscriptionId = 'sub_test_update_123';
-  const testPriceIdBasic = 'price_test_basic';
-  const testPriceIdPremium = 'price_test_premium';
+  const testSubscriptionId = "sub_test_update_123";
+  const testPriceIdBasic = "price_test_basic";
+  const testPriceIdPremium = "price_test_premium";
   
   beforeAll(() => {
-    // Firebase Admin j� inicializado no setup.ts global
+    // Firebase Admin j� inicializado no setup.ts global
     wrapped = test.wrap(updateStripeSubscription);
   });
 
@@ -52,14 +52,14 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
     jest.clearAllMocks();
   });
 
-  describe('✅ Cenários Positivos', () => {
-    it('deve fazer upgrade de plano (Basic → Premium)', async () => {
+  describe("✅ Cenários Positivos", () => {
+    it("deve fazer upgrade de plano (Basic → Premium)", async () => {
       const mockSubscription = {
         id: testSubscriptionId,
         items: {
           data: [
             {
-              id: 'si_test_item_123',
+              id: "si_test_item_123",
               price: { id: testPriceIdBasic },
             },
           ],
@@ -68,7 +68,7 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
 
       const mockUpdatedSubscription = {
         id: testSubscriptionId,
-        status: 'active',
+        status: "active",
         current_period_end: 1706745599,
       };
 
@@ -80,32 +80,32 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
           subscriptionId: testSubscriptionId,
           newPriceId: testPriceIdPremium,
         },
-        { auth: { uid: 'test-user-123' } }
+        { auth: { uid: "test-user-123" } }
       );
 
       expect(mockStripeSubscriptionsRetrieve).toHaveBeenCalledWith(testSubscriptionId);
       expect(mockStripeSubscriptionsUpdate).toHaveBeenCalledWith(testSubscriptionId, {
         items: [
           {
-            id: 'si_test_item_123',
+            id: "si_test_item_123",
             price: testPriceIdPremium,
           },
         ],
-        proration_behavior: 'always_invoice',
+        proration_behavior: "always_invoice",
       });
       expect(result.subscriptionId).toBe(testSubscriptionId);
       expect(result.newPrice).toBe(testPriceIdPremium);
-      expect(result.status).toBe('active');
+      expect(result.status).toBe("active");
       expect(result.currentPeriodEnd).toBe(1706745599);
     });
 
-    it('deve fazer downgrade de plano (Premium → Basic)', async () => {
+    it("deve fazer downgrade de plano (Premium → Basic)", async () => {
       const mockSubscription = {
         id: testSubscriptionId,
         items: {
           data: [
             {
-              id: 'si_test_item_456',
+              id: "si_test_item_456",
               price: { id: testPriceIdPremium },
             },
           ],
@@ -114,7 +114,7 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
 
       const mockUpdatedSubscription = {
         id: testSubscriptionId,
-        status: 'active',
+        status: "active",
         current_period_end: 1706745599,
       };
 
@@ -126,19 +126,19 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
           subscriptionId: testSubscriptionId,
           newPriceId: testPriceIdBasic,
         },
-        { auth: { uid: 'test-user-123' } }
+        { auth: { uid: "test-user-123" } }
       );
 
       expect(result.newPrice).toBe(testPriceIdBasic);
     });
 
-    it('deve aplicar proration_behavior corretamente', async () => {
+    it("deve aplicar proration_behavior corretamente", async () => {
       const mockSubscription = {
         id: testSubscriptionId,
         items: {
           data: [
             {
-              id: 'si_test_item_789',
+              id: "si_test_item_789",
               price: { id: testPriceIdBasic },
             },
           ],
@@ -147,7 +147,7 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
 
       const mockUpdatedSubscription = {
         id: testSubscriptionId,
-        status: 'active',
+        status: "active",
         current_period_end: 1706745599,
       };
 
@@ -159,20 +159,20 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
           subscriptionId: testSubscriptionId,
           newPriceId: testPriceIdPremium,
         },
-        { auth: { uid: 'test-user-123' } }
+        { auth: { uid: "test-user-123" } }
       );
 
       expect(mockStripeSubscriptionsUpdate).toHaveBeenCalledWith(
         testSubscriptionId,
         expect.objectContaining({
-          proration_behavior: 'always_invoice',
+          proration_behavior: "always_invoice",
         })
       );
     });
   });
 
-  describe('❌ Cenários Negativos', () => {
-    it('deve retornar erro se não autenticado', async () => {
+  describe("❌ Cenários Negativos", () => {
+    it("deve retornar erro se não autenticado", async () => {
       await expect(
         wrapped(
           {
@@ -181,60 +181,60 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
           },
           { auth: null }
         )
-      ).rejects.toThrow('User must be authenticated');
+      ).rejects.toThrow("User must be authenticated");
     });
 
-    it('deve retornar erro se subscriptionId ausente', async () => {
+    it("deve retornar erro se subscriptionId ausente", async () => {
       await expect(
         wrapped(
           {
             newPriceId: testPriceIdPremium,
           },
-          { auth: { uid: 'test-user-123' } }
+          { auth: { uid: "test-user-123" } }
         )
-      ).rejects.toThrow('Missing required fields');
+      ).rejects.toThrow("Missing required fields");
     });
 
-    it('deve retornar erro se newPriceId ausente', async () => {
+    it("deve retornar erro se newPriceId ausente", async () => {
       await expect(
         wrapped(
           {
             subscriptionId: testSubscriptionId,
           },
-          { auth: { uid: 'test-user-123' } }
+          { auth: { uid: "test-user-123" } }
         )
-      ).rejects.toThrow('Missing required fields');
+      ).rejects.toThrow("Missing required fields");
     });
 
-    it('deve retornar erro se ambos os campos ausentes', async () => {
+    it("deve retornar erro se ambos os campos ausentes", async () => {
       await expect(
-        wrapped({}, { auth: { uid: 'test-user-123' } })
-      ).rejects.toThrow('Missing required fields');
+        wrapped({}, { auth: { uid: "test-user-123" } })
+      ).rejects.toThrow("Missing required fields");
     });
 
-    it('deve retornar erro se subscription não existe', async () => {
+    it("deve retornar erro se subscription não existe", async () => {
       mockStripeSubscriptionsRetrieve.mockRejectedValue(
-        new Error('Stripe API Error: No such subscription')
+        new Error("Stripe API Error: No such subscription")
       );
 
       await expect(
         wrapped(
           {
-            subscriptionId: 'sub_invalid',
+            subscriptionId: "sub_invalid",
             newPriceId: testPriceIdPremium,
           },
-          { auth: { uid: 'test-user-123' } }
+          { auth: { uid: "test-user-123" } }
         )
       ).rejects.toThrow();
     });
 
-    it('deve retornar erro se priceId inválido', async () => {
+    it("deve retornar erro se priceId inválido", async () => {
       const mockSubscription = {
         id: testSubscriptionId,
         items: {
           data: [
             {
-              id: 'si_test_item_abc',
+              id: "si_test_item_abc",
               price: { id: testPriceIdBasic },
             },
           ],
@@ -243,34 +243,34 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
 
       mockStripeSubscriptionsRetrieve.mockResolvedValue(mockSubscription);
       mockStripeSubscriptionsUpdate.mockRejectedValue(
-        new Error('Stripe API Error: No such price')
+        new Error("Stripe API Error: No such price")
       );
 
       await expect(
         wrapped(
           {
             subscriptionId: testSubscriptionId,
-            newPriceId: 'price_invalid',
+            newPriceId: "price_invalid",
           },
-          { auth: { uid: 'test-user-123' } }
+          { auth: { uid: "test-user-123" } }
         )
       ).rejects.toThrow();
     });
   });
 
-  describe('⚠️ Edge Cases', () => {
-    it('deve lidar com subscription com múltiplos items (usar primeiro)', async () => {
+  describe("⚠️ Edge Cases", () => {
+    it("deve lidar com subscription com múltiplos items (usar primeiro)", async () => {
       const mockSubscription = {
         id: testSubscriptionId,
         items: {
           data: [
             {
-              id: 'si_test_item_first',
+              id: "si_test_item_first",
               price: { id: testPriceIdBasic },
             },
             {
-              id: 'si_test_item_second',
-              price: { id: 'price_addon' },
+              id: "si_test_item_second",
+              price: { id: "price_addon" },
             },
           ],
         },
@@ -278,7 +278,7 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
 
       const mockUpdatedSubscription = {
         id: testSubscriptionId,
-        status: 'active',
+        status: "active",
         current_period_end: 1706745599,
       };
 
@@ -290,7 +290,7 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
           subscriptionId: testSubscriptionId,
           newPriceId: testPriceIdPremium,
         },
-        { auth: { uid: 'test-user-123' } }
+        { auth: { uid: "test-user-123" } }
       );
 
       expect(mockStripeSubscriptionsUpdate).toHaveBeenCalledWith(
@@ -298,7 +298,7 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
         expect.objectContaining({
           items: [
             {
-              id: 'si_test_item_first', // Should use first item
+              id: "si_test_item_first", // Should use first item
               price: testPriceIdPremium,
             },
           ],
@@ -306,13 +306,13 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
       );
     });
 
-    it('deve lidar com subscription já usando o mesmo priceId', async () => {
+    it("deve lidar com subscription já usando o mesmo priceId", async () => {
       const mockSubscription = {
         id: testSubscriptionId,
         items: {
           data: [
             {
-              id: 'si_test_item_same',
+              id: "si_test_item_same",
               price: { id: testPriceIdPremium },
             },
           ],
@@ -321,7 +321,7 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
 
       const mockUpdatedSubscription = {
         id: testSubscriptionId,
-        status: 'active',
+        status: "active",
         current_period_end: 1706745599,
       };
 
@@ -333,19 +333,19 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
           subscriptionId: testSubscriptionId,
           newPriceId: testPriceIdPremium, // Same as current
         },
-        { auth: { uid: 'test-user-123' } }
+        { auth: { uid: "test-user-123" } }
       );
 
       expect(result.newPrice).toBe(testPriceIdPremium);
     });
 
-    it('deve lidar com subscription cancelada (status=canceled)', async () => {
+    it("deve lidar com subscription cancelada (status=canceled)", async () => {
       const mockSubscription = {
         id: testSubscriptionId,
         items: {
           data: [
             {
-              id: 'si_test_item_canceled',
+              id: "si_test_item_canceled",
               price: { id: testPriceIdBasic },
             },
           ],
@@ -354,7 +354,7 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
 
       const mockUpdatedSubscription = {
         id: testSubscriptionId,
-        status: 'canceled',
+        status: "canceled",
         current_period_end: 1706745599,
       };
 
@@ -366,10 +366,10 @@ describe('🔵 Stripe Functions - updateStripeSubscription', () => {
           subscriptionId: testSubscriptionId,
           newPriceId: testPriceIdPremium,
         },
-        { auth: { uid: 'test-user-123' } }
+        { auth: { uid: "test-user-123" } }
       );
 
-      expect(result.status).toBe('canceled');
+      expect(result.status).toBe("canceled");
     });
   });
 });

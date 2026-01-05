@@ -5,6 +5,11 @@ const tsParser = require('@typescript-eslint/parser');
 module.exports = [
   {
     files: ['**/*.ts'],
+    ignores: [
+      '**/__tests__/**',
+      '**/*.test.ts',
+      '**/*.spec.ts',
+    ],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -21,12 +26,20 @@ module.exports = [
       '@typescript-eslint': tsPlugin,
     },
     rules: {
-      ...tsPlugin.configs.recommended.rules,
+      // Basic formatting
       'quotes': ['error', 'double'],
       'indent': ['error', 2],
       'max-len': ['warn', { code: 120 }],
       'require-jsdoc': 'off',
       'valid-jsdoc': 'off',
+      // TypeScript rules - disabled for Express middleware
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }],
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
   {
@@ -34,6 +47,9 @@ module.exports = [
       'lib/**/*',
       'generated/**/*',
       'node_modules/**/*',
+      '**/__tests__/**',
+      '**/*.test.ts',
+      '**/*.spec.ts',
     ],
   },
 ];

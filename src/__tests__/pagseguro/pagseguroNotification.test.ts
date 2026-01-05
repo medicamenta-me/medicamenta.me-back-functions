@@ -1,28 +1,28 @@
 // @ts-nocheck
-import * as admin from 'firebase-admin';
-import functionsTest from 'firebase-functions-test';
-import axios from 'axios';
-import xml2js from 'xml2js';
+import * as admin from "firebase-admin";
+import functionsTest from "firebase-functions-test";
+import axios from "axios";
+import xml2js from "xml2js";
 
 const test = functionsTest();
 
 // Mock axios
-jest.mock('axios');
+jest.mock("axios");
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 // Mock xml2js
-jest.mock('xml2js');
+jest.mock("xml2js");
 
 // Mock functions.config() to return PagSeguro credentials
 const mockConfig = {
   pagseguro: {
-    email: 'test@pagseguro.com',
-    token: 'test_token_123'
+    email: "test@pagseguro.com",
+    token: "test_token_123"
   }
 };
 
-jest.mock('firebase-functions', () => {
-  const actual = jest.requireActual('firebase-functions');
+jest.mock("firebase-functions", () => {
+  const actual = jest.requireActual("firebase-functions");
   return {
     ...actual,
     config: jest.fn(() => mockConfig),
@@ -36,9 +36,9 @@ jest.mock('firebase-functions', () => {
 });
 
 // Import function AFTER mocking
-import { pagseguroNotification } from '../../pagseguro-functions';
+import { pagseguroNotification } from "../../pagseguro-functions";
 
-describe('pagseguroNotification', () => {
+describe("pagseguroNotification", () => {
   let mockFirestore: any;
   let mockCollection: any;
   let mockDoc: any;
@@ -60,7 +60,7 @@ describe('pagseguroNotification', () => {
     mockDoc = jest.fn().mockReturnValue({ update: mockUpdate });
     mockCollection = jest.fn().mockReturnValue({ doc: mockDoc });
 
-    jest.spyOn(admin, 'firestore').mockReturnValue({
+    jest.spyOn(admin, "firestore").mockReturnValue({
       collection: mockCollection
     } as any);
   });
@@ -85,23 +85,23 @@ describe('pagseguroNotification', () => {
   // CENÁRIOS POSITIVOS - PRE-APPROVAL
   // ==========================================
 
-  describe('Cenários Positivos - PreApproval', () => {
-    it('should successfully process preApproval notification (active status)', async () => {
+  describe("Cenários Positivos - PreApproval", () => {
+    it("should successfully process preApproval notification (active status)", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF123',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF123",
+        notificationType: "preApproval"
       });
 
-      const mockXmlResponse = '<xml>preapproval</xml>';
+      const mockXmlResponse = "<xml>preapproval</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           preApproval: {
-            reference: ['SUB123'],
-            code: ['CODE123'],
-            status: ['ACTIVE'],
-            lastEventDate: ['2024-01-15T10:30:00']
+            reference: ["SUB123"],
+            code: ["CODE123"],
+            status: ["ACTIVE"],
+            lastEventDate: ["2024-01-15T10:30:00"]
           }
         })
       };
@@ -111,28 +111,28 @@ describe('pagseguroNotification', () => {
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith('OK');
-      expect(mockCollection).toHaveBeenCalledWith('subscriptions');
-      expect(mockDoc).toHaveBeenCalledWith('SUB123');
+      expect(res.send).toHaveBeenCalledWith("OK");
+      expect(mockCollection).toHaveBeenCalledWith("subscriptions");
+      expect(mockDoc).toHaveBeenCalledWith("SUB123");
       expect(mockUpdate).toHaveBeenCalled();
     });
 
-    it('should update subscription status to active for ACTIVE status', async () => {
+    it("should update subscription status to active for ACTIVE status", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF456',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF456",
+        notificationType: "preApproval"
       });
 
-      const mockXmlResponse = '<xml>preapproval</xml>';
+      const mockXmlResponse = "<xml>preapproval</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           preApproval: {
-            reference: ['SUB456'],
-            code: ['CODE456'],
-            status: ['ACTIVE'],
-            lastEventDate: ['2024-01-16T12:00:00']
+            reference: ["SUB456"],
+            code: ["CODE456"],
+            status: ["ACTIVE"],
+            lastEventDate: ["2024-01-16T12:00:00"]
           }
         })
       };
@@ -143,29 +143,29 @@ describe('pagseguroNotification', () => {
 
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
-          pagseguroCode: 'CODE456',
-          status: 'active',
-          lastEventDate: '2024-01-16T12:00:00'
+          pagseguroCode: "CODE456",
+          status: "active",
+          lastEventDate: "2024-01-16T12:00:00"
         })
       );
     });
 
-    it('should downgrade to free plan when subscription cancelled', async () => {
+    it("should downgrade to free plan when subscription cancelled", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF789',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF789",
+        notificationType: "preApproval"
       });
 
-      const mockXmlResponse = '<xml>preapproval</xml>';
+      const mockXmlResponse = "<xml>preapproval</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           preApproval: {
-            reference: ['SUB789'],
-            code: ['CODE789'],
-            status: ['CANCELLED'],
-            lastEventDate: ['2024-01-17T14:00:00']
+            reference: ["SUB789"],
+            code: ["CODE789"],
+            status: ["CANCELLED"],
+            lastEventDate: ["2024-01-17T14:00:00"]
           }
         })
       };
@@ -178,30 +178,30 @@ describe('pagseguroNotification', () => {
       expect(mockUpdate).toHaveBeenCalledTimes(2);
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
-          status: 'canceled'
+          status: "canceled"
         })
       );
       expect(mockUpdate).toHaveBeenCalledWith({
-        plan: 'free'
+        plan: "free"
       });
     });
 
-    it('should map SUSPENDED status to past_due', async () => {
+    it("should map SUSPENDED status to past_due", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF111',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF111",
+        notificationType: "preApproval"
       });
 
-      const mockXmlResponse = '<xml>preapproval</xml>';
+      const mockXmlResponse = "<xml>preapproval</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           preApproval: {
-            reference: ['SUB111'],
-            code: ['CODE111'],
-            status: ['SUSPENDED'],
-            lastEventDate: ['2024-01-18T09:00:00']
+            reference: ["SUB111"],
+            code: ["CODE111"],
+            status: ["SUSPENDED"],
+            lastEventDate: ["2024-01-18T09:00:00"]
           }
         })
       };
@@ -212,7 +212,7 @@ describe('pagseguroNotification', () => {
 
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
-          status: 'past_due'
+          status: "past_due"
         })
       );
     });
@@ -222,22 +222,22 @@ describe('pagseguroNotification', () => {
   // CENÁRIOS POSITIVOS - TRANSACTION
   // ==========================================
 
-  describe('Cenários Positivos - Transaction', () => {
-    it('should successfully process transaction notification (payment successful)', async () => {
+  describe("Cenários Positivos - Transaction", () => {
+    it("should successfully process transaction notification (payment successful)", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'TXN123',
-        notificationType: 'transaction'
+        notificationCode: "TXN123",
+        notificationType: "transaction"
       });
 
-      const mockXmlResponse = '<xml>transaction</xml>';
+      const mockXmlResponse = "<xml>transaction</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           transaction: {
-            reference: ['SUB123'],
-            status: ['3'],
-            grossAmount: ['99.90']
+            reference: ["SUB123"],
+            status: ["3"],
+            grossAmount: ["99.90"]
           }
         })
       };
@@ -247,32 +247,32 @@ describe('pagseguroNotification', () => {
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith('OK');
+      expect(res.send).toHaveBeenCalledWith("OK");
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
-          'currentUsage.reportsGenerated': 0,
-          'currentUsage.ocrScansUsed': 0,
-          'currentUsage.telehealthConsultsUsed': 0,
+          "currentUsage.reportsGenerated": 0,
+          "currentUsage.ocrScansUsed": 0,
+          "currentUsage.telehealthConsultsUsed": 0,
           lastPaymentAmount: 99.90
         })
       );
     });
 
-    it('should reset usage counters for successful payment (status 3)', async () => {
+    it("should reset usage counters for successful payment (status 3)", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'TXN456',
-        notificationType: 'transaction'
+        notificationCode: "TXN456",
+        notificationType: "transaction"
       });
 
-      const mockXmlResponse = '<xml>transaction</xml>';
+      const mockXmlResponse = "<xml>transaction</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           transaction: {
-            reference: ['SUB456'],
-            status: ['3'],
-            grossAmount: ['149.90']
+            reference: ["SUB456"],
+            status: ["3"],
+            grossAmount: ["149.90"]
           }
         })
       };
@@ -283,28 +283,28 @@ describe('pagseguroNotification', () => {
 
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
-          'currentUsage.reportsGenerated': 0,
-          'currentUsage.ocrScansUsed': 0,
-          'currentUsage.telehealthConsultsUsed': 0
+          "currentUsage.reportsGenerated": 0,
+          "currentUsage.ocrScansUsed": 0,
+          "currentUsage.telehealthConsultsUsed": 0
         })
       );
     });
 
-    it('should reset usage counters for payment available (status 4)', async () => {
+    it("should reset usage counters for payment available (status 4)", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'TXN789',
-        notificationType: 'transaction'
+        notificationCode: "TXN789",
+        notificationType: "transaction"
       });
 
-      const mockXmlResponse = '<xml>transaction</xml>';
+      const mockXmlResponse = "<xml>transaction</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           transaction: {
-            reference: ['SUB789'],
-            status: ['4'],
-            grossAmount: ['199.90']
+            reference: ["SUB789"],
+            status: ["4"],
+            grossAmount: ["199.90"]
           }
         })
       };
@@ -315,27 +315,27 @@ describe('pagseguroNotification', () => {
 
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
-          'currentUsage.reportsGenerated': 0,
+          "currentUsage.reportsGenerated": 0,
           lastPaymentAmount: 199.90
         })
       );
     });
 
-    it('should mark subscription as past_due for canceled payment (status 7)', async () => {
+    it("should mark subscription as past_due for canceled payment (status 7)", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'TXN999',
-        notificationType: 'transaction'
+        notificationCode: "TXN999",
+        notificationType: "transaction"
       });
 
-      const mockXmlResponse = '<xml>transaction</xml>';
+      const mockXmlResponse = "<xml>transaction</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           transaction: {
-            reference: ['SUB999'],
-            status: ['7'],
-            grossAmount: ['99.90']
+            reference: ["SUB999"],
+            status: ["7"],
+            grossAmount: ["99.90"]
           }
         })
       };
@@ -345,7 +345,7 @@ describe('pagseguroNotification', () => {
       await pagseguroNotification(req as any, res as any);
 
       expect(mockUpdate).toHaveBeenCalledWith({
-        status: 'past_due'
+        status: "past_due"
       });
     });
   });
@@ -354,71 +354,71 @@ describe('pagseguroNotification', () => {
   // CENÁRIOS NEGATIVOS
   // ==========================================
 
-  describe('Cenários Negativos', () => {
-    it('should return 400 if notificationCode is missing', async () => {
+  describe("Cenários Negativos", () => {
+    it("should return 400 if notificationCode is missing", async () => {
       const { req, res } = createMockReqRes({
-        notificationType: 'preApproval'
+        notificationType: "preApproval"
       });
 
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.send).toHaveBeenCalledWith('Missing notification parameters');
+      expect(res.send).toHaveBeenCalledWith("Missing notification parameters");
     });
 
-    it('should return 400 if notificationType is missing', async () => {
+    it("should return 400 if notificationType is missing", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF123'
+        notificationCode: "NOTIF123"
       });
 
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.send).toHaveBeenCalledWith('Missing notification parameters');
+      expect(res.send).toHaveBeenCalledWith("Missing notification parameters");
     });
 
-    it('should return 400 for unknown notification type', async () => {
+    it("should return 400 for unknown notification type", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF123',
-        notificationType: 'unknown'
+        notificationCode: "NOTIF123",
+        notificationType: "unknown"
       });
 
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.send).toHaveBeenCalledWith('Unknown notification type');
+      expect(res.send).toHaveBeenCalledWith("Unknown notification type");
     });
 
-    it('should return 500 if PagSeguro API fails', async () => {
+    it("should return 500 if PagSeguro API fails", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF123',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF123",
+        notificationType: "preApproval"
       });
 
-      mockedAxios.get.mockRejectedValue(new Error('API Error'));
+      mockedAxios.get.mockRejectedValue(new Error("API Error"));
 
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+      expect(res.send).toHaveBeenCalledWith("Error processing notification");
     });
 
-    it('should return 500 if Firestore update fails', async () => {
+    it("should return 500 if Firestore update fails", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF123',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF123",
+        notificationType: "preApproval"
       });
 
-      const mockXmlResponse = '<xml>preapproval</xml>';
+      const mockXmlResponse = "<xml>preapproval</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           preApproval: {
-            reference: ['SUB123'],
-            code: ['CODE123'],
-            status: ['ACTIVE'],
-            lastEventDate: ['2024-01-15T10:30:00']
+            reference: ["SUB123"],
+            code: ["CODE123"],
+            status: ["ACTIVE"],
+            lastEventDate: ["2024-01-15T10:30:00"]
           }
         })
       };
@@ -426,12 +426,12 @@ describe('pagseguroNotification', () => {
       (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
 
       // Mock Firestore update to fail
-      mockUpdate.mockRejectedValue(new Error('Firestore Error'));
+      mockUpdate.mockRejectedValue(new Error("Firestore Error"));
 
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+      expect(res.send).toHaveBeenCalledWith("Error processing notification");
     });
   });
 
@@ -439,23 +439,23 @@ describe('pagseguroNotification', () => {
   // EDGE CASES
   // ==========================================
 
-  describe('Edge Cases', () => {
-    it('should accept notification from query parameters', async () => {
+  describe("Edge Cases", () => {
+    it("should accept notification from query parameters", async () => {
       const { req, res } = createMockReqRes({}, {
-        notificationCode: 'NOTIF123',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF123",
+        notificationType: "preApproval"
       });
 
-      const mockXmlResponse = '<xml>preapproval</xml>';
+      const mockXmlResponse = "<xml>preapproval</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           preApproval: {
-            reference: ['SUB123'],
-            code: ['CODE123'],
-            status: ['ACTIVE'],
-            lastEventDate: ['2024-01-15T10:30:00']
+            reference: ["SUB123"],
+            code: ["CODE123"],
+            status: ["ACTIVE"],
+            lastEventDate: ["2024-01-15T10:30:00"]
           }
         })
       };
@@ -465,19 +465,19 @@ describe('pagseguroNotification', () => {
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith('OK');
+      expect(res.send).toHaveBeenCalledWith("OK");
     });
 
-    it('should handle invalid XML parsing error', async () => {
+    it("should handle invalid XML parsing error", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF123',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF123",
+        notificationType: "preApproval"
       });
 
-      mockedAxios.get.mockResolvedValue({ data: 'invalid xml' });
+      mockedAxios.get.mockResolvedValue({ data: "invalid xml" });
 
       const mockParser = {
-        parseStringPromise: jest.fn().mockRejectedValue(new Error('XML parsing error'))
+        parseStringPromise: jest.fn().mockRejectedValue(new Error("XML parsing error"))
       };
 
       (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
@@ -487,36 +487,36 @@ describe('pagseguroNotification', () => {
       expect(res.status).toHaveBeenCalledWith(500);
     });
 
-    it('should handle network timeout', async () => {
+    it("should handle network timeout", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF123',
-        notificationType: 'transaction'
+        notificationCode: "NOTIF123",
+        notificationType: "transaction"
       });
 
-      mockedAxios.get.mockRejectedValue(new Error('ETIMEDOUT'));
+      mockedAxios.get.mockRejectedValue(new Error("ETIMEDOUT"));
 
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+      expect(res.send).toHaveBeenCalledWith("Error processing notification");
     });
 
-    it('should handle EXPIRED preApproval status', async () => {
+    it("should handle EXPIRED preApproval status", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF222',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF222",
+        notificationType: "preApproval"
       });
 
-      const mockXmlResponse = '<xml>preapproval</xml>';
+      const mockXmlResponse = "<xml>preapproval</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           preApproval: {
-            reference: ['SUB222'],
-            code: ['CODE222'],
-            status: ['EXPIRED'],
-            lastEventDate: ['2024-01-20T10:00:00']
+            reference: ["SUB222"],
+            code: ["CODE222"],
+            status: ["EXPIRED"],
+            lastEventDate: ["2024-01-20T10:00:00"]
           }
         })
       };
@@ -527,7 +527,7 @@ describe('pagseguroNotification', () => {
 
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
-          status: 'canceled'
+          status: "canceled"
         })
       );
     });
@@ -537,27 +537,27 @@ describe('pagseguroNotification', () => {
   // ERROR HANDLING - NOVOS TESTES SPRINT 5
   // ==========================================
 
-  describe('Error Handling - Catch Blocks', () => {
-    it('should handle Firestore update error in transaction notification', async () => {
+  describe("Error Handling - Catch Blocks", () => {
+    it("should handle Firestore update error in transaction notification", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF_ERROR',
-        notificationType: 'transaction'
+        notificationCode: "NOTIF_ERROR",
+        notificationType: "transaction"
       });
 
-      const mockXmlResponse = '<xml>transaction</xml>';
+      const mockXmlResponse = "<xml>transaction</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           transaction: {
-            reference: ['ORDER123'],
-            code: ['TRX123'],
-            status: ['3'], // Paid
+            reference: ["ORDER123"],
+            code: ["TRX123"],
+            status: ["3"], // Paid
             paymentMethod: {
-              type: ['1']
+              type: ["1"]
             },
-            grossAmount: ['99.90'],
-            lastEventDate: ['2024-01-15T10:00:00']
+            grossAmount: ["99.90"],
+            lastEventDate: ["2024-01-15T10:00:00"]
           }
         })
       };
@@ -565,26 +565,26 @@ describe('pagseguroNotification', () => {
       (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
 
       // Simular erro no Firestore update
-      mockUpdate.mockRejectedValueOnce(new Error('Firestore write failed'));
+      mockUpdate.mockRejectedValueOnce(new Error("Firestore write failed"));
 
       await pagseguroNotification(req as any, res as any);
 
       // Deve retornar erro 500
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+      expect(res.send).toHaveBeenCalledWith("Error processing notification");
     });
 
-    it('should handle XML parsing error in transaction notification', async () => {
+    it("should handle XML parsing error in transaction notification", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF_XML_ERROR',
-        notificationType: 'transaction'
+        notificationCode: "NOTIF_XML_ERROR",
+        notificationType: "transaction"
       });
 
-      const mockXmlResponse = '<invalid>xml';
+      const mockXmlResponse = "<invalid>xml";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
-        parseStringPromise: jest.fn().mockRejectedValue(new Error('XML parsing failed'))
+        parseStringPromise: jest.fn().mockRejectedValue(new Error("XML parsing failed"))
       };
 
       (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
@@ -592,40 +592,40 @@ describe('pagseguroNotification', () => {
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+      expect(res.send).toHaveBeenCalledWith("Error processing notification");
     });
 
-    it('should handle network error when fetching notification from PagSeguro', async () => {
+    it("should handle network error when fetching notification from PagSeguro", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF_NETWORK_ERROR',
-        notificationType: 'transaction'
+        notificationCode: "NOTIF_NETWORK_ERROR",
+        notificationType: "transaction"
       });
 
       // Simular erro de rede
-      mockedAxios.get.mockRejectedValue(new Error('Network timeout'));
+      mockedAxios.get.mockRejectedValue(new Error("Network timeout"));
 
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+      expect(res.send).toHaveBeenCalledWith("Error processing notification");
     });
 
-    it('should handle Firestore update error in preApproval notification', async () => {
+    it("should handle Firestore update error in preApproval notification", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF_PREAPPROVAL_ERROR',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF_PREAPPROVAL_ERROR",
+        notificationType: "preApproval"
       });
 
-      const mockXmlResponse = '<xml>preapproval</xml>';
+      const mockXmlResponse = "<xml>preapproval</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           preApproval: {
-            reference: ['SUB_ERROR'],
-            code: ['CODE_ERROR'],
-            status: ['ACTIVE'],
-            lastEventDate: ['2024-01-15T10:00:00']
+            reference: ["SUB_ERROR"],
+            code: ["CODE_ERROR"],
+            status: ["ACTIVE"],
+            lastEventDate: ["2024-01-15T10:00:00"]
           }
         })
       };
@@ -633,30 +633,30 @@ describe('pagseguroNotification', () => {
       (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
 
       // Simular erro no Firestore update
-      mockUpdate.mockRejectedValueOnce(new Error('Firestore connection lost'));
+      mockUpdate.mockRejectedValueOnce(new Error("Firestore connection lost"));
 
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+      expect(res.send).toHaveBeenCalledWith("Error processing notification");
     });
 
-    it('should handle unknown status code in status mapping', async () => {
+    it("should handle unknown status code in status mapping", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF_UNKNOWN_STATUS',
-        notificationType: 'preApproval'
+        notificationCode: "NOTIF_UNKNOWN_STATUS",
+        notificationType: "preApproval"
       });
 
-      const mockXmlResponse = '<xml>preapproval</xml>';
+      const mockXmlResponse = "<xml>preapproval</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           preApproval: {
-            reference: ['SUB_UNKNOWN'],
-            code: ['CODE_UNKNOWN'],
-            status: ['UNKNOWN_STATUS'], // Status não mapeado
-            lastEventDate: ['2024-01-15T10:00:00']
+            reference: ["SUB_UNKNOWN"],
+            code: ["CODE_UNKNOWN"],
+            status: ["UNKNOWN_STATUS"], // Status não mapeado
+            lastEventDate: ["2024-01-15T10:00:00"]
           }
         })
       };
@@ -668,22 +668,22 @@ describe('pagseguroNotification', () => {
       // Deve usar status padrão 'active' para status desconhecido
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
-          status: 'active' // Default mapping
+          status: "active" // Default mapping
         })
       );
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
-    it('should handle empty notification response from PagSeguro', async () => {
+    it("should handle empty notification response from PagSeguro", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF_EMPTY',
-        notificationType: 'transaction'
+        notificationCode: "NOTIF_EMPTY",
+        notificationType: "transaction"
       });
 
-      mockedAxios.get.mockResolvedValue({ data: '' });
+      mockedAxios.get.mockResolvedValue({ data: "" });
 
       const mockParser = {
-        parseStringPromise: jest.fn().mockRejectedValue(new Error('Empty response'))
+        parseStringPromise: jest.fn().mockRejectedValue(new Error("Empty response"))
       };
 
       (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
@@ -691,16 +691,16 @@ describe('pagseguroNotification', () => {
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+      expect(res.send).toHaveBeenCalledWith("Error processing notification");
     });
 
-    it('should handle malformed transaction data structure', async () => {
+    it("should handle malformed transaction data structure", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF_MALFORMED',
-        notificationType: 'transaction'
+        notificationCode: "NOTIF_MALFORMED",
+        notificationType: "transaction"
       });
 
-      const mockXmlResponse = '<xml>transaction</xml>';
+      const mockXmlResponse = "<xml>transaction</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
@@ -708,7 +708,7 @@ describe('pagseguroNotification', () => {
           transaction: {
             // Missing required fields: reference, code, status
             paymentMethod: {
-              type: ['1']
+              type: ["1"]
             }
           }
         })
@@ -720,29 +720,29 @@ describe('pagseguroNotification', () => {
 
       // Deve lançar erro ao tentar acessar campos undefined
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+      expect(res.send).toHaveBeenCalledWith("Error processing notification");
     });
 
-    it('should handle concurrent Firestore updates gracefully', async () => {
+    it("should handle concurrent Firestore updates gracefully", async () => {
       const { req, res } = createMockReqRes({
-        notificationCode: 'NOTIF_CONCURRENT',
-        notificationType: 'transaction'
+        notificationCode: "NOTIF_CONCURRENT",
+        notificationType: "transaction"
       });
 
-      const mockXmlResponse = '<xml>transaction</xml>';
+      const mockXmlResponse = "<xml>transaction</xml>";
       mockedAxios.get.mockResolvedValue({ data: mockXmlResponse });
 
       const mockParser = {
         parseStringPromise: jest.fn().mockResolvedValue({
           transaction: {
-            reference: ['ORDER_CONCURRENT'],
-            code: ['TRX_CONCURRENT'],
-            status: ['3'],
+            reference: ["ORDER_CONCURRENT"],
+            code: ["TRX_CONCURRENT"],
+            status: ["3"],
             paymentMethod: {
-              type: ['1']
+              type: ["1"]
             },
-            grossAmount: ['99.90'],
-            lastEventDate: ['2024-01-15T10:00:00']
+            grossAmount: ["99.90"],
+            lastEventDate: ["2024-01-15T10:00:00"]
           }
         })
       };
@@ -750,12 +750,12 @@ describe('pagseguroNotification', () => {
       (xml2js.Parser as jest.Mock).mockImplementation(() => mockParser);
 
       // Simular erro de concorrência (conflict)
-      mockUpdate.mockRejectedValueOnce(new Error('Document update conflict'));
+      mockUpdate.mockRejectedValueOnce(new Error("Document update conflict"));
 
       await pagseguroNotification(req as any, res as any);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith('Error processing notification');
+      expect(res.send).toHaveBeenCalledWith("Error processing notification");
     });
   });
 });

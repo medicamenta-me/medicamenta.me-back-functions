@@ -4,9 +4,9 @@
  * CRUD operations for medications
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
-import { ApiError } from '../utils/api-error';
+import { Router, Request, Response, NextFunction } from "express";
+import * as admin from "firebase-admin";
+import { ApiError } from "../utils/api-error";
 
 const router = Router();
 
@@ -17,7 +17,7 @@ const getDb = () => admin.firestore();
  * POST /v1/medications
  * Create new medication for a patient
  */
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const {
@@ -38,21 +38,21 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     if (!patientId || !name || !dosage || !frequency) {
       throw new ApiError(
         400,
-        'VALIDATION_ERROR',
-        'patientId, name, dosage, and frequency are required'
+        "VALIDATION_ERROR",
+        "patientId, name, dosage, and frequency are required"
       );
     }
 
     // Verify patient ownership
-    const patientRef = getDb().collection('patients').doc(patientId);
+    const patientRef = getDb().collection("patients").doc(patientId);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Patient not found');
+      throw new ApiError(404, "NOT_FOUND", "Patient not found");
     }
 
     if (patientDoc.data()!.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied to this patient');
+      throw new ApiError(403, "FORBIDDEN", "Access denied to this patient");
     }
 
     // Create medication
@@ -69,7 +69,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       prescribedBy: prescribedBy || null,
       refillReminder: refillReminder || false,
       stockQuantity: stockQuantity || 0,
-      status: 'active',
+      status: "active",
       adherenceRate: 0,
       totalDoses: 0,
       takenDoses: 0,
@@ -78,7 +78,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    const docRef = await getDb().collection('medications').add(medication);
+    const docRef = await getDb().collection("medications").add(medication);
 
     res.status(201).json({
       id: docRef.id,
@@ -95,24 +95,24 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
  * GET /v1/medications
  * List medications
  */
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { patientId, status, limit = 50, offset = 0 } = req.query;
 
-    let query = getDb().collection('medications')
-      .where('partnerId', '==', partnerId);
+    let query = getDb().collection("medications")
+      .where("partnerId", "==", partnerId);
 
     if (patientId) {
-      query = query.where('patientId', '==', patientId);
+      query = query.where("patientId", "==", patientId);
     }
 
     if (status) {
-      query = query.where('status', '==', status);
+      query = query.where("status", "==", status);
     }
 
     query = query
-      .orderBy('createdAt', 'desc')
+      .orderBy("createdAt", "desc")
       .limit(Number(limit))
       .offset(Number(offset));
 
@@ -140,22 +140,22 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
  * GET /v1/medications/:id
  * Get medication by ID
  */
-router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const medicationRef = getDb().collection('medications').doc(id);
+    const medicationRef = getDb().collection("medications").doc(id);
     const medicationDoc = await medicationRef.get();
 
     if (!medicationDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Medication not found');
+      throw new ApiError(404, "NOT_FOUND", "Medication not found");
     }
 
     const medication = medicationDoc.data()!;
 
     if (medication.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied');
+      throw new ApiError(403, "FORBIDDEN", "Access denied");
     }
 
     res.json({
@@ -171,36 +171,36 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
  * PATCH /v1/medications/:id
  * Update medication
  */
-router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const medicationRef = getDb().collection('medications').doc(id);
+    const medicationRef = getDb().collection("medications").doc(id);
     const medicationDoc = await medicationRef.get();
 
     if (!medicationDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Medication not found');
+      throw new ApiError(404, "NOT_FOUND", "Medication not found");
     }
 
     const medication = medicationDoc.data()!;
 
     if (medication.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied');
+      throw new ApiError(403, "FORBIDDEN", "Access denied");
     }
 
     const allowedFields = [
-      'name',
-      'dosage',
-      'frequency',
-      'times',
-      'startDate',
-      'endDate',
-      'instructions',
-      'prescribedBy',
-      'refillReminder',
-      'stockQuantity',
-      'status',
+      "name",
+      "dosage",
+      "frequency",
+      "times",
+      "startDate",
+      "endDate",
+      "instructions",
+      "prescribedBy",
+      "refillReminder",
+      "stockQuantity",
+      "status",
     ];
 
     const updates: any = {};
@@ -229,27 +229,27 @@ router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => 
  * DELETE /v1/medications/:id
  * Delete medication
  */
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const medicationRef = getDb().collection('medications').doc(id);
+    const medicationRef = getDb().collection("medications").doc(id);
     const medicationDoc = await medicationRef.get();
 
     if (!medicationDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Medication not found');
+      throw new ApiError(404, "NOT_FOUND", "Medication not found");
     }
 
     const medication = medicationDoc.data()!;
 
     if (medication.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied');
+      throw new ApiError(403, "FORBIDDEN", "Access denied");
     }
 
     // Soft delete
     await medicationRef.update({
-      status: 'deleted',
+      status: "deleted",
       deletedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 

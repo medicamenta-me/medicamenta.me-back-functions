@@ -5,17 +5,17 @@
  * Cobertura: getPriceId, getOrCreateCustomer
  */
 
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, jest, beforeEach, afterEach } from "@jest/globals";
 
 // Mock Firebase Functions
-jest.mock('firebase-functions', () => ({
+jest.mock("firebase-functions", () => ({
   config: jest.fn().mockReturnValue({
     stripe: {
-      secret_key: 'sk_test_mock',
-      premium_monthly: 'price_premium_monthly_test',
-      premium_yearly: 'price_premium_yearly_test',
-      family_monthly: 'price_family_monthly_test',
-      family_yearly: 'price_family_yearly_test',
+      secret_key: "sk_test_mock",
+      premium_monthly: "price_premium_monthly_test",
+      premium_yearly: "price_premium_yearly_test",
+      family_monthly: "price_family_monthly_test",
+      family_yearly: "price_family_yearly_test",
     },
   }),
   firestore: {
@@ -31,7 +31,7 @@ jest.mock('firebase-functions', () => ({
 }));
 
 // Mock Stripe
-jest.mock('stripe', () => {
+jest.mock("stripe", () => {
   return jest.fn().mockImplementation(() => ({
     customers: {
       create: jest.fn(),
@@ -46,11 +46,11 @@ jest.mock('stripe', () => {
 });
 
 // Import after mocks
-const Stripe = require('stripe');
+const Stripe = require("stripe");
 
 // Precisamos importar as funções após os mocks
 // Como elas não são exportadas diretamente, vamos testá-las através dos exports
-describe('🔧 Index Helper Functions', () => {
+describe("🔧 Index Helper Functions", () => {
   let mockFirestore: any;
   let mockStripe: any;
 
@@ -70,13 +70,13 @@ describe('🔧 Index Helper Functions', () => {
     jest.clearAllMocks();
   });
 
-  describe('getPriceId() - Mapeamento de Planos', () => {
+  describe("getPriceId() - Mapeamento de Planos", () => {
     // Como a função não é exportada, vamos testar através do comportamento
     // que ela causa nas Cloud Functions
 
-    it('deve retornar price ID correto para Premium Monthly', () => {
-      const plan = 'premium';
-      const interval = 'monthly';
+    it("deve retornar price ID correto para Premium Monthly", () => {
+      const plan = "premium";
+      const interval = "monthly";
       
       // A função usa este mapeamento:
       // if (plan === 'premium') {
@@ -84,54 +84,54 @@ describe('🔧 Index Helper Functions', () => {
       // }
       
       // Verificamos o comportamento através dos testes de integração
-      expect(plan).toBe('premium');
-      expect(interval).toBe('monthly');
+      expect(plan).toBe("premium");
+      expect(interval).toBe("monthly");
     });
 
-    it('deve retornar price ID correto para Premium Yearly', () => {
-      const plan = 'premium';
-      const interval = 'yearly';
+    it("deve retornar price ID correto para Premium Yearly", () => {
+      const plan = "premium";
+      const interval = "yearly";
       
-      expect(plan).toBe('premium');
-      expect(interval).toBe('yearly');
+      expect(plan).toBe("premium");
+      expect(interval).toBe("yearly");
     });
 
-    it('deve retornar price ID correto para Family Monthly', () => {
-      const plan = 'family';
-      const interval = 'monthly';
+    it("deve retornar price ID correto para Family Monthly", () => {
+      const plan = "family";
+      const interval = "monthly";
       
-      expect(plan).toBe('family');
-      expect(interval).toBe('monthly');
+      expect(plan).toBe("family");
+      expect(interval).toBe("monthly");
     });
 
-    it('deve retornar price ID correto para Family Yearly', () => {
-      const plan = 'family';
-      const interval = 'yearly';
+    it("deve retornar price ID correto para Family Yearly", () => {
+      const plan = "family";
+      const interval = "yearly";
       
-      expect(plan).toBe('family');
-      expect(interval).toBe('yearly');
+      expect(plan).toBe("family");
+      expect(interval).toBe("yearly");
     });
 
-    it('deve lançar erro para plano inválido', () => {
-      const plan = 'invalid_plan' as string;
+    it("deve lançar erro para plano inválido", () => {
+      const plan = "invalid_plan" as string;
       
       // A função deveria lançar: throw new Error(`Invalid plan: ${plan}`);
       expect(() => {
-        if (plan !== 'premium' && plan !== 'family') {
+        if (plan !== "premium" && plan !== "family") {
           throw new Error(`Invalid plan: ${plan}`);
         }
-      }).toThrow('Invalid plan: invalid_plan');
+      }).toThrow("Invalid plan: invalid_plan");
     });
   });
 
-  describe('getOrCreateCustomer() - Gestão de Clientes Stripe', () => {
-    const userId = 'test-user-123';
-    const email = 'test@example.com';
-    const name = 'Test User';
+  describe("getOrCreateCustomer() - Gestão de Clientes Stripe", () => {
+    const userId = "test-user-123";
+    const email = "test@example.com";
+    const name = "Test User";
 
-    describe('✅ Cenários Positivos', () => {
-      it('deve retornar customer existente se já cadastrado', async () => {
-        const existingCustomerId = 'cus_existing123';
+    describe("✅ Cenários Positivos", () => {
+      it("deve retornar customer existente se já cadastrado", async () => {
+        const existingCustomerId = "cus_existing123";
         
         mockFirestore.get.mockResolvedValue({
           exists: true,
@@ -150,8 +150,8 @@ describe('🔧 Index Helper Functions', () => {
         }
       });
 
-      it('deve criar novo customer se não existe', async () => {
-        const newCustomerId = 'cus_new123';
+      it("deve criar novo customer se não existe", async () => {
+        const newCustomerId = "cus_new123";
 
         mockFirestore.get.mockResolvedValue({
           exists: false,
@@ -178,7 +178,7 @@ describe('🔧 Index Helper Functions', () => {
             id: customer.id,
             userId,
             email,
-            name: name || '',
+            name: name || "",
             created: customer.created,
             metadata: { firebaseUid: userId },
           });
@@ -193,8 +193,8 @@ describe('🔧 Index Helper Functions', () => {
         }
       });
 
-      it('deve criar customer com name vazio se não fornecido', async () => {
-        const newCustomerId = 'cus_noname123';
+      it("deve criar customer com name vazio se não fornecido", async () => {
+        const newCustomerId = "cus_noname123";
 
         mockFirestore.get.mockResolvedValue({
           exists: false,
@@ -203,7 +203,7 @@ describe('🔧 Index Helper Functions', () => {
         mockStripe.customers.create.mockResolvedValue({
           id: newCustomerId,
           email,
-          name: '',
+          name: "",
           created: Math.floor(Date.now() / 1000),
           metadata: { firebaseUid: userId },
         });
@@ -221,7 +221,7 @@ describe('🔧 Index Helper Functions', () => {
             id: customer.id,
             userId,
             email,
-            name: '', // name || ''
+            name: "", // name || ''
             created: customer.created,
             metadata: { firebaseUid: userId },
           });
@@ -230,13 +230,13 @@ describe('🔧 Index Helper Functions', () => {
         }
       });
 
-      it('deve salvar metadata com firebaseUid', async () => {
+      it("deve salvar metadata com firebaseUid", async () => {
         mockFirestore.get.mockResolvedValue({
           exists: false,
         });
 
         mockStripe.customers.create.mockResolvedValue({
-          id: 'cus_metadata123',
+          id: "cus_metadata123",
           email,
           created: Math.floor(Date.now() / 1000),
           metadata: { firebaseUid: userId },
@@ -255,16 +255,16 @@ describe('🔧 Index Helper Functions', () => {
       });
     });
 
-    describe('❌ Cenários Negativos', () => {
-      it('deve propagar erro se Firestore falhar ao ler', async () => {
-        const firestoreError = new Error('Firestore read error');
+    describe("❌ Cenários Negativos", () => {
+      it("deve propagar erro se Firestore falhar ao ler", async () => {
+        const firestoreError = new Error("Firestore read error");
         mockFirestore.get.mockRejectedValue(firestoreError);
 
-        await expect(mockFirestore.get()).rejects.toThrow('Firestore read error');
+        await expect(mockFirestore.get()).rejects.toThrow("Firestore read error");
       });
 
-      it('deve propagar erro se Stripe API falhar', async () => {
-        const stripeError = new Error('Stripe API error');
+      it("deve propagar erro se Stripe API falhar", async () => {
+        const stripeError = new Error("Stripe API error");
 
         mockFirestore.get.mockResolvedValue({
           exists: false,
@@ -280,19 +280,19 @@ describe('🔧 Index Helper Functions', () => {
               email,
               metadata: { firebaseUid: userId },
             })
-          ).rejects.toThrow('Stripe API error');
+          ).rejects.toThrow("Stripe API error");
         }
       });
 
-      it('deve propagar erro se Firestore falhar ao escrever', async () => {
-        const firestoreWriteError = new Error('Firestore write error');
+      it("deve propagar erro se Firestore falhar ao escrever", async () => {
+        const firestoreWriteError = new Error("Firestore write error");
 
         mockFirestore.get.mockResolvedValue({
           exists: false,
         });
 
         mockStripe.customers.create.mockResolvedValue({
-          id: 'cus_test123',
+          id: "cus_test123",
           email,
           created: Math.floor(Date.now() / 1000),
           metadata: { firebaseUid: userId },
@@ -316,21 +316,21 @@ describe('🔧 Index Helper Functions', () => {
               created: customer.created,
               metadata: { firebaseUid: userId },
             })
-          ).rejects.toThrow('Firestore write error');
+          ).rejects.toThrow("Firestore write error");
         }
       });
     });
 
-    describe('⚠️ Edge Cases', () => {
-      it('deve lidar com email vazio', async () => {
-        const emptyEmail = '';
+    describe("⚠️ Edge Cases", () => {
+      it("deve lidar com email vazio", async () => {
+        const emptyEmail = "";
 
         mockFirestore.get.mockResolvedValue({
           exists: false,
         });
 
         mockStripe.customers.create.mockResolvedValue({
-          id: 'cus_noemail123',
+          id: "cus_noemail123",
           email: emptyEmail,
           created: Math.floor(Date.now() / 1000),
           metadata: { firebaseUid: userId },
@@ -344,11 +344,11 @@ describe('🔧 Index Helper Functions', () => {
             metadata: { firebaseUid: userId },
           });
 
-          expect(customer.email).toBe('');
+          expect(customer.email).toBe("");
         }
       });
 
-      it('deve lidar com customer.data() retornando null', async () => {
+      it("deve lidar com customer.data() retornando null", async () => {
         mockFirestore.get.mockResolvedValue({
           exists: true,
           data: () => null,
@@ -365,8 +365,8 @@ describe('🔧 Index Helper Functions', () => {
         }
       });
 
-      it('deve lidar com userId com caracteres especiais', async () => {
-        const specialUserId = 'user-123/test@special';
+      it("deve lidar com userId com caracteres especiais", async () => {
+        const specialUserId = "user-123/test@special";
         const encodedPath = `users/${specialUserId}/stripe_customer/data`;
 
         mockFirestore.get.mockResolvedValue({
@@ -376,7 +376,7 @@ describe('🔧 Index Helper Functions', () => {
         expect(encodedPath).toContain(specialUserId);
       });
 
-      it('deve lidar com created timestamp muito alto', async () => {
+      it("deve lidar com created timestamp muito alto", async () => {
         const futureTimestamp = 9999999999;
 
         mockFirestore.get.mockResolvedValue({
@@ -384,7 +384,7 @@ describe('🔧 Index Helper Functions', () => {
         });
 
         mockStripe.customers.create.mockResolvedValue({
-          id: 'cus_future123',
+          id: "cus_future123",
           email,
           created: futureTimestamp,
           metadata: { firebaseUid: userId },
@@ -404,12 +404,12 @@ describe('🔧 Index Helper Functions', () => {
     });
   });
 
-  describe('🔄 Integration Scenarios', () => {
-    it('deve testar fluxo completo: customer não existe → criar → retornar ID', async () => {
-      const userId = 'integration-user-123';
-      const email = 'integration@test.com';
-      const name = 'Integration Test';
-      const newCustomerId = 'cus_integration123';
+  describe("🔄 Integration Scenarios", () => {
+    it("deve testar fluxo completo: customer não existe → criar → retornar ID", async () => {
+      const userId = "integration-user-123";
+      const email = "integration@test.com";
+      const name = "Integration Test";
+      const newCustomerId = "cus_integration123";
 
       // 1. Check if customer exists
       mockFirestore.get.mockResolvedValue({
@@ -455,9 +455,9 @@ describe('🔧 Index Helper Functions', () => {
       );
     });
 
-    it('deve testar fluxo completo: customer existe → retornar ID existente', async () => {
-      const userId = 'existing-user-123';
-      const existingCustomerId = 'cus_existing_integration123';
+    it("deve testar fluxo completo: customer existe → retornar ID existente", async () => {
+      const userId = "existing-user-123";
+      const existingCustomerId = "cus_existing_integration123";
 
       // 1. Check if customer exists
       mockFirestore.get.mockResolvedValue({
@@ -465,7 +465,7 @@ describe('🔧 Index Helper Functions', () => {
         data: () => ({
           id: existingCustomerId,
           userId,
-          email: 'existing@test.com',
+          email: "existing@test.com",
         }),
       });
 

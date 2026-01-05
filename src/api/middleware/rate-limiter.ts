@@ -5,8 +5,8 @@
  * Diferentes limites para diferentes tiers de parceiros
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { ApiError } from '../utils/api-error';
+import { Request, Response, NextFunction } from "express";
+import { ApiError } from "../utils/api-error";
 
 // In-memory fallback (use Redis in production)
 export const requestCounts = new Map<string, { count: number; resetTime: number }>();
@@ -44,7 +44,7 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
  * Get rate limit config for user's tier
  */
 function getRateLimitConfig(tier?: string): RateLimitConfig {
-  return RATE_LIMITS[tier || 'free'] || RATE_LIMITS.free;
+  return RATE_LIMITS[tier || "free"] || RATE_LIMITS.free;
 }
 
 /**
@@ -52,7 +52,7 @@ function getRateLimitConfig(tier?: string): RateLimitConfig {
  */
 function getClientId(req: Request): string {
   // Use API key if present
-  const apiKey = req.headers['x-api-key'] as string;
+  const apiKey = req.headers["x-api-key"] as string;
   if (apiKey) {
     return `api-key:${apiKey}`;
   }
@@ -63,7 +63,7 @@ function getClientId(req: Request): string {
   }
 
   // Fallback to IP address
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   return `ip:${ip}`;
 }
 
@@ -100,18 +100,18 @@ export async function rateLimiter(
     record.count++;
 
     // Set rate limit headers
-    res.setHeader('X-RateLimit-Limit', config.maxRequests.toString());
-    res.setHeader('X-RateLimit-Remaining', Math.max(0, config.maxRequests - record.count).toString());
-    res.setHeader('X-RateLimit-Reset', new Date(record.resetTime).toISOString());
+    res.setHeader("X-RateLimit-Limit", config.maxRequests.toString());
+    res.setHeader("X-RateLimit-Remaining", Math.max(0, config.maxRequests - record.count).toString());
+    res.setHeader("X-RateLimit-Reset", new Date(record.resetTime).toISOString());
 
     // Check if limit exceeded
     if (record.count > config.maxRequests) {
       const retryAfter = Math.ceil((record.resetTime - now) / 1000);
-      res.setHeader('Retry-After', retryAfter.toString());
+      res.setHeader("Retry-After", retryAfter.toString());
       
       throw new ApiError(
         429,
-        'RATE_LIMIT_EXCEEDED',
+        "RATE_LIMIT_EXCEEDED",
         `Rate limit exceeded. Try again in ${retryAfter} seconds`,
         {
           limit: config.maxRequests,

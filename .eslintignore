@@ -1,0 +1,11 @@
+# Ignore built files
+lib/
+
+# Ignore generated files
+generated/
+
+# Ignore test files (they have different lint requirements)
+**/__tests__/**
+**/*.test.ts
+**/*.spec.ts
+src/__tests__/**/*

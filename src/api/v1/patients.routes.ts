@@ -4,9 +4,9 @@
  * CRUD operations for patients
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
-import { ApiError } from '../utils/api-error';
+import { Router, Request, Response, NextFunction } from "express";
+import * as admin from "firebase-admin";
+import { ApiError } from "../utils/api-error";
 
 const router = Router();
 const getDb = () => admin.firestore();
@@ -15,7 +15,7 @@ const getDb = () => admin.firestore();
  * POST /v1/patients
  * Create new patient
  */
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const {
@@ -35,9 +35,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     if (!name || !dateOfBirth) {
       throw new ApiError(
         400,
-        'VALIDATION_ERROR',
-        'name and dateOfBirth are required',
-        { required: ['name', 'dateOfBirth'] }
+        "VALIDATION_ERROR",
+        "name and dateOfBirth are required",
+        { required: ["name", "dateOfBirth"] }
       );
     }
 
@@ -54,16 +54,16 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       medicalConditions: medicalConditions || [],
       allergies: allergies || [],
       metadata: metadata || {},
-      status: 'active',
+      status: "active",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    const docRef = await getDb().collection('patients').add(patient);
+    const docRef = await getDb().collection("patients").add(patient);
 
     // Log creation
-    await getDb().collection('audit_logs').add({
-      action: 'PATIENT_CREATED',
+    await getDb().collection("audit_logs").add({
+      action: "PATIENT_CREATED",
       partnerId,
       patientId: docRef.id,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -82,23 +82,23 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
  * GET /v1/patients/:id
  * Get patient by ID
  */
-router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const patientRef = getDb().collection('patients').doc(id);
+    const patientRef = getDb().collection("patients").doc(id);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Patient not found');
+      throw new ApiError(404, "NOT_FOUND", "Patient not found");
     }
 
     const patient = patientDoc.data()!;
 
     // Verify ownership
     if (patient.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied to this patient');
+      throw new ApiError(403, "FORBIDDEN", "Access denied to this patient");
     }
 
     res.json({
@@ -112,17 +112,17 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
  * GET /v1/patients
  * List patients
  */
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { limit = 20, offset = 0, status, search } = req.query;
 
-    let query = getDb().collection('patients')
-      .where('partnerId', '==', partnerId);
+    let query = getDb().collection("patients")
+      .where("partnerId", "==", partnerId);
 
     // Filter by status
     if (status) {
-      query = query.where('status', '==', status);
+      query = query.where("status", "==", status);
     }
 
     // Pagination
@@ -162,38 +162,38 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
  * PATCH /v1/patients/:id
  * Update patient
  */
-router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
 
-    const patientRef = getDb().collection('patients').doc(id);
+    const patientRef = getDb().collection("patients").doc(id);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Patient not found');
+      throw new ApiError(404, "NOT_FOUND", "Patient not found");
     }
 
     const patient = patientDoc.data()!;
 
     // Verify ownership
     if (patient.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied to this patient');
+      throw new ApiError(403, "FORBIDDEN", "Access denied to this patient");
     }
 
     // Update allowed fields
     const allowedFields = [
-      'name',
-      'email',
-      'phone',
-      'dateOfBirth',
-      'gender',
-      'address',
-      'emergencyContact',
-      'medicalConditions',
-      'allergies',
-      'metadata',
-      'status',
+      "name",
+      "email",
+      "phone",
+      "dateOfBirth",
+      "gender",
+      "address",
+      "emergencyContact",
+      "medicalConditions",
+      "allergies",
+      "metadata",
+      "status",
     ];
 
     const updates: any = {};
@@ -204,7 +204,7 @@ router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => 
     }
 
     if (Object.keys(updates).length === 0) {
-      throw new ApiError(400, 'VALIDATION_ERROR', 'No valid fields to update');
+      throw new ApiError(400, "VALIDATION_ERROR", "No valid fields to update");
     }
 
     updates.updatedAt = admin.firestore.FieldValue.serverTimestamp();
@@ -212,8 +212,8 @@ router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => 
     await patientRef.update(updates);
 
     // Log update
-    await getDb().collection('audit_logs').add({
-      action: 'PATIENT_UPDATED',
+    await getDb().collection("audit_logs").add({
+      action: "PATIENT_UPDATED",
       partnerId,
       patientId: id,
       changes: updates,
@@ -233,40 +233,40 @@ router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => 
  * DELETE /v1/patients/:id
  * Delete patient (soft delete)
  */
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const partnerId = (req as any).partnerId;
     const { id } = req.params;
     const { hard = false } = req.query;
 
-    const patientRef = getDb().collection('patients').doc(id);
+    const patientRef = getDb().collection("patients").doc(id);
     const patientDoc = await patientRef.get();
 
     if (!patientDoc.exists) {
-      throw new ApiError(404, 'NOT_FOUND', 'Patient not found');
+      throw new ApiError(404, "NOT_FOUND", "Patient not found");
     }
 
     const patient = patientDoc.data()!;
 
     // Verify ownership
     if (patient.partnerId !== partnerId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Access denied to this patient');
+      throw new ApiError(403, "FORBIDDEN", "Access denied to this patient");
     }
 
-    if (hard === 'true') {
+    if (hard === "true") {
       // Hard delete (permanent)
       await patientRef.delete();
     } else {
       // Soft delete
       await patientRef.update({
-        status: 'deleted',
+        status: "deleted",
         deletedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     }
 
     // Log deletion
-    await getDb().collection('audit_logs').add({
-      action: hard === 'true' ? 'PATIENT_HARD_DELETED' : 'PATIENT_DELETED',
+    await getDb().collection("audit_logs").add({
+      action: hard === "true" ? "PATIENT_HARD_DELETED" : "PATIENT_DELETED",
       partnerId,
       patientId: id,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),

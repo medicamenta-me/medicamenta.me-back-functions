@@ -4,9 +4,9 @@
  * Valida API Keys e adiciona informações do parceiro à request
  */
 
-import { Request, Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
-import { ApiError } from '../utils/api-error';
+import { Request, Response, NextFunction } from "express";
+import * as admin from "firebase-admin";
+import { ApiError } from "../utils/api-error";
 
 const db = admin.firestore();
 
@@ -15,9 +15,9 @@ interface ApiKey {
   partnerId: string;
   name: string;
   key: string;
-  tier: 'free' | 'starter' | 'professional' | 'business' | 'enterprise';
+  tier: "free" | "starter" | "professional" | "business" | "enterprise";
   permissions: string[];
-  status: 'active' | 'suspended' | 'revoked';
+  status: "active" | "suspended" | "revoked";
   rateLimit: {
     requestsPerMinute: number;
     requestsPerDay: number;
@@ -43,13 +43,13 @@ export async function validateApiKey(
   next: NextFunction
 ): Promise<void> {
   try {
-    const apiKeyHeader = req.headers['x-api-key'] as string;
+    const apiKeyHeader = req.headers["x-api-key"] as string;
 
     if (!apiKeyHeader) {
       throw new ApiError(
         401,
-        'MISSING_API_KEY',
-        'API key is required. Provide it in X-API-Key header'
+        "MISSING_API_KEY",
+        "API key is required. Provide it in X-API-Key header"
       );
     }
 
@@ -61,14 +61,14 @@ export async function validateApiKey(
     }
 
     // Query Firestore
-    const apiKeysRef = db.collection('api_keys');
+    const apiKeysRef = db.collection("api_keys");
     const snapshot = await apiKeysRef
-      .where('key', '==', apiKeyHeader)
+      .where("key", "==", apiKeyHeader)
       .limit(1)
       .get();
 
     if (snapshot.empty) {
-      throw new ApiError(401, 'INVALID_API_KEY', 'Invalid API key');
+      throw new ApiError(401, "INVALID_API_KEY", "Invalid API key");
     }
 
     const apiKeyDoc = snapshot.docs[0];
@@ -78,17 +78,17 @@ export async function validateApiKey(
     } as ApiKey;
 
     // Validate status
-    if (apiKey.status !== 'active') {
+    if (apiKey.status !== "active") {
       throw new ApiError(
         403,
-        'API_KEY_INACTIVE',
+        "API_KEY_INACTIVE",
         `API key is ${apiKey.status}`
       );
     }
 
     // Validate expiration
     if (apiKey.expiresAt && apiKey.expiresAt.getTime() < Date.now()) {
-      throw new ApiError(401, 'API_KEY_EXPIRED', 'API key has expired');
+      throw new ApiError(401, "API_KEY_EXPIRED", "API key has expired");
     }
 
     // Update usage stats (async, don't wait)
@@ -123,11 +123,11 @@ function attachApiKeyInfo(req: Request, apiKey: ApiKey): void {
  * Update API key usage statistics
  */
 async function updateApiKeyUsage(apiKeyId: string): Promise<void> {
-  const apiKeyRef = db.collection('api_keys').doc(apiKeyId);
+  const apiKeyRef = db.collection("api_keys").doc(apiKeyId);
   
   await apiKeyRef.update({
-    'usage.totalRequests': admin.firestore.FieldValue.increment(1),
-    'usage.lastUsed': admin.firestore.FieldValue.serverTimestamp(),
+    "usage.totalRequests": admin.firestore.FieldValue.increment(1),
+    "usage.lastUsed": admin.firestore.FieldValue.serverTimestamp(),
   });
 }
 
@@ -137,19 +137,19 @@ async function updateApiKeyUsage(apiKeyId: string): Promise<void> {
 export async function generateApiKey(
   partnerId: string,
   name: string,
-  tier: ApiKey['tier'],
+  tier: ApiKey["tier"],
   permissions: string[] = []
 ): Promise<string> {
   // Generate secure random key
   const key = `mk_${tier}_${generateRandomString(32)}`;
 
-  const apiKey: Omit<ApiKey, 'id'> = {
+  const apiKey: Omit<ApiKey, "id"> = {
     partnerId,
     name,
     key,
     tier,
     permissions,
-    status: 'active',
+    status: "active",
     rateLimit: {
       requestsPerMinute: getRateLimitForTier(tier).requestsPerMinute,
       requestsPerDay: getRateLimitForTier(tier).requestsPerDay,
@@ -160,11 +160,11 @@ export async function generateApiKey(
     createdAt: new Date(),
   };
 
-  const docRef = await db.collection('api_keys').add(apiKey);
+  const docRef = await db.collection("api_keys").add(apiKey);
 
   // Log creation
-  await db.collection('audit_logs').add({
-    action: 'API_KEY_CREATED',
+  await db.collection("audit_logs").add({
+    action: "API_KEY_CREATED",
     partnerId,
     apiKeyId: docRef.id,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -177,10 +177,10 @@ export async function generateApiKey(
  * Revoke API key
  */
 export async function revokeApiKey(apiKeyId: string): Promise<void> {
-  const apiKeyRef = db.collection('api_keys').doc(apiKeyId);
+  const apiKeyRef = db.collection("api_keys").doc(apiKeyId);
   
   await apiKeyRef.update({
-    status: 'revoked',
+    status: "revoked",
     revokedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
@@ -195,7 +195,7 @@ export async function revokeApiKey(apiKeyId: string): Promise<void> {
 /**
  * Get rate limit configuration for tier
  */
-function getRateLimitForTier(tier: ApiKey['tier']): {
+function getRateLimitForTier(tier: ApiKey["tier"]): {
   requestsPerMinute: number;
   requestsPerDay: number;
 } {
@@ -214,8 +214,8 @@ function getRateLimitForTier(tier: ApiKey['tier']): {
  * Generate random string
  */
 function generateRandomString(length: number): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
