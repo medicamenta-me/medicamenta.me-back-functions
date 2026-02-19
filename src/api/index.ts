@@ -20,6 +20,7 @@ import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
+import { REGION } from "../shared/config/region";
 import { rateLimiter } from "./middleware/rate-limiter";
 import { authenticate } from "./middleware/auth";
 import { errorHandler } from "./middleware/error-handler";
@@ -188,6 +189,7 @@ app.use(errorHandler);
 export { app };
 
 export const api = functions
+  .region(REGION)
   .runWith({
     timeoutSeconds: 60,
     memory: "1GB",

@@ -68,11 +68,11 @@ A **Medicamenta.me API** é uma RESTful API para integração com parceiros do e
     },
     servers: [
       {
-        url: "https://us-central1-medicamenta-me.cloudfunctions.net/api",
-        description: "Production Server"
+        url: "https://southamerica-east1-medicamenta-me.cloudfunctions.net/api",
+        description: "Production Server (São Paulo)"
       },
       {
-        url: "http://127.0.0.1:5001/medicamenta-me/us-central1/api",
+        url: "http://127.0.0.1:5001/medicamenta-me/southamerica-east1/api",
         description: "Local Development (Firebase Emulator)"
       }
     ],

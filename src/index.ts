@@ -30,8 +30,8 @@ export {
 } from "./triggers";
 
 // Initialize Stripe
-// Get Stripe secret key from environment config
-const stripeSecretKey = functions.config().stripe?.secret_key || process.env.STRIPE_SECRET_KEY || "";
+// Get Stripe secret key from environment variables (.env)
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
 const stripe = new Stripe(stripeSecretKey);
 
 /**
@@ -40,12 +40,12 @@ const stripe = new Stripe(stripeSecretKey);
  */
 const PRICE_IDS = {
   premium: {
-    monthly: functions.config().stripe?.premium_monthly || "price_premium_monthly_brl",
-    yearly: functions.config().stripe?.premium_yearly || "price_premium_yearly_brl"
+    monthly: process.env.STRIPE_PREMIUM_MONTHLY || "price_premium_monthly_brl",
+    yearly: process.env.STRIPE_PREMIUM_YEARLY || "price_premium_yearly_brl"
   },
   family: {
-    monthly: functions.config().stripe?.family_monthly || "price_family_monthly_brl",
-    yearly: functions.config().stripe?.family_yearly || "price_family_yearly_brl"
+    monthly: process.env.STRIPE_FAMILY_MONTHLY || "price_family_monthly_brl",
+    yearly: process.env.STRIPE_FAMILY_YEARLY || "price_family_yearly_brl"
   }
 };
 
@@ -237,7 +237,7 @@ export const createStripeBillingPortalSession = functions.firestore
 export const handleStripeWebhook = functions.https.onRequest(
   async (req: functions.https.Request, res: functions.Response) => {
     const sig = req.headers["stripe-signature"] as string;
-    const webhookSecret = functions.config().stripe?.webhook_secret || process.env.STRIPE_WEBHOOK_SECRET || "";
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
     let event: Stripe.Event;
 

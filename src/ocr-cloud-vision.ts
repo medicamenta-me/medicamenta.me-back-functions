@@ -8,6 +8,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
+import { REGION } from "./shared/config/region";
 
 // Initialize Vision API client
 const visionClient = new ImageAnnotatorClient();
@@ -43,7 +44,7 @@ interface BoundingBox {
  * HTTPS Callable Function: Process image with Cloud Vision API
  */
 export const processImageWithCloudVision = functions
-  .region("us-central1")
+  .region(REGION)
   .runWith({
     timeoutSeconds: 60,
     memory: "512MB"
@@ -184,7 +185,7 @@ export const processImageWithCloudVision = functions
  * Firestore Trigger: Auto-process low confidence scans with Cloud Vision
  */
 export const autoProcessLowConfidenceScans = functions
-  .region("us-central1")
+  .region(REGION)
   .firestore
   .document("users/{userId}/ocr_scans/{scanId}")
   .onCreate(async (snap, context) => {

@@ -15,6 +15,7 @@
 
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { REGION } from "../shared/config/region";
 import {
   eventLogService,
   EventType,
@@ -62,7 +63,7 @@ export interface TriggerResult {
  * 2. Atualizar contagem de produtos da farmácia
  */
 export const onProductCreated = functions
-  .region("us-central1")
+  .region(REGION)
   .runWith({
     timeoutSeconds: 60,
     memory: "256MB",
@@ -155,7 +156,7 @@ export const onProductCreated = functions
  * 3. Notificar se produto ficou sem estoque
  */
 export const onProductUpdated = functions
-  .region("us-central1")
+  .region(REGION)
   .runWith({
     timeoutSeconds: 60,
     memory: "256MB",
@@ -252,7 +253,7 @@ export const onProductUpdated = functions
  * 2. Atualizar contagem de produtos da farmácia
  */
 export const onProductDeleted = functions
-  .region("us-central1")
+  .region(REGION)
   .runWith({
     timeoutSeconds: 60,
     memory: "256MB",

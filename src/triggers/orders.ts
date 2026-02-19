@@ -14,6 +14,7 @@
 
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { REGION } from "../shared/config/region";
 import {
   eventLogService,
   EventType,
@@ -92,7 +93,7 @@ export interface TriggerResult {
  * 4. Atualizar estatísticas da farmácia
  */
 export const onOrderCreated = functions
-  .region("us-central1")
+  .region(REGION)
   .runWith({
     timeoutSeconds: 60,
     memory: "256MB",
@@ -203,7 +204,7 @@ export const onOrderCreated = functions
  * 4. Atualizar estatísticas se necessário
  */
 export const onOrderStatusUpdated = functions
-  .region("us-central1")
+  .region(REGION)
   .runWith({
     timeoutSeconds: 60,
     memory: "256MB",

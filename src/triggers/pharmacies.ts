@@ -14,6 +14,7 @@
 
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
+import { REGION } from "../shared/config/region";
 import {
   eventLogService,
   EventType,
@@ -84,7 +85,7 @@ export interface TriggerResult {
  * 2. Notificar administradores para revisão
  */
 export const onPharmacyCreated = functions
-  .region("us-central1")
+  .region(REGION)
   .runWith({
     timeoutSeconds: 60,
     memory: "256MB",
@@ -175,7 +176,7 @@ export const onPharmacyCreated = functions
  * 4. Executar ações específicas por status
  */
 export const onPharmacyStatusUpdated = functions
-  .region("us-central1")
+  .region(REGION)
   .runWith({
     timeoutSeconds: 60,
     memory: "256MB",

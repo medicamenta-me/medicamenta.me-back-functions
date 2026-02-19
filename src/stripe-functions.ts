@@ -2,8 +2,8 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import Stripe from "stripe";
 
-// Initialize Stripe with secret key (use environment variable or config)
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || functions.config()?.stripe?.secret_key || "";
+// Initialize Stripe with secret key (use environment variable)
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
   apiVersion: "2023-10-16",
 }) : null as any;
@@ -98,7 +98,7 @@ export const createStripeCheckoutSession = functions.https.onCall(
  */
 export const stripeWebhook = functions.https.onRequest(async (req, res) => {
   const sig = req.headers["stripe-signature"] as string;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || functions.config()?.stripe?.webhook_secret;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   let event: Stripe.Event;
 

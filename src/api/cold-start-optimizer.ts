@@ -22,7 +22,7 @@ export const FUNCTION_OPTIONS: functions.RuntimeOptions = {
   // 60 second timeout for API calls
   timeoutSeconds: 60,
   // Use Node.js 22 for latest optimizations
-  // Region should be configured per deployment
+  // Region configured via REGION constant (southamerica-east1)
 };
 
 // For high-traffic endpoints, use these options
