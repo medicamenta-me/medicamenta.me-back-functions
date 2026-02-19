@@ -16,11 +16,11 @@
   },
   "servers": [
     {
-      "url": "https://us-central1-{project-id}.cloudfunctions.net/api",
+      "url": "https://southamerica-east1-{project-id}.cloudfunctions.net/api",
       "description": "Production"
     },
     {
-      "url": "http://localhost:5001/{project-id}/us-central1/api",
+      "url": "http://localhost:5001/{project-id}/southamerica-east1/api",
       "description": "Local Development"
     }
   ],

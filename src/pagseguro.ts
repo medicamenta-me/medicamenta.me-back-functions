@@ -11,6 +11,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import axios from "axios";
+import { REGION } from "./shared/config/region";
 
 const db = admin.firestore();
 
@@ -20,11 +21,11 @@ const db = admin.firestore();
 const PAGSEGURO_CONFIG = {
   sandbox: {
     apiUrl: "https://sandbox.api.pagseguro.com",
-    token: functions.config().pagseguro?.test_token || process.env.PAGSEGURO_TEST_TOKEN || ""
+    token: process.env.PAGSEGURO_TEST_TOKEN || ""
   },
   production: {
     apiUrl: "https://api.pagseguro.com",
-    token: functions.config().pagseguro?.live_token || process.env.PAGSEGURO_LIVE_TOKEN || ""
+    token: process.env.PAGSEGURO_LIVE_TOKEN || ""
   }
 };
 
@@ -32,7 +33,7 @@ const PAGSEGURO_CONFIG = {
  * Get PagSeguro config based on environment
  */
 function getPagSeguroConfig() {
-  const isProduction = functions.config().environment?.mode === "production";
+  const isProduction = process.env.ENVIRONMENT_MODE === "production";
   return isProduction ? PAGSEGURO_CONFIG.production : PAGSEGURO_CONFIG.sandbox;
 }
 
@@ -90,7 +91,7 @@ export const createPagSeguroPixCharge = functions.firestore
           }
         },
         notification_urls: [
-          `https://us-central1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/handlePagSeguroWebhook`
+          `https://${REGION}-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/handlePagSeguroWebhook`
         ],
         metadata: data.metadata
       });
@@ -176,7 +177,7 @@ export const createPagSeguroBoletoCharge = functions.firestore
           }
         },
         notification_urls: [
-          `https://us-central1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/handlePagSeguroWebhook`
+          `https://${REGION}-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/handlePagSeguroWebhook`
         ],
         metadata: data.metadata
       });
@@ -246,7 +247,7 @@ export const createPagSeguroCardCharge = functions.firestore
           }
         },
         notification_urls: [
-          `https://us-central1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/handlePagSeguroWebhook`
+          `https://${REGION}-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/handlePagSeguroWebhook`
         ],
         metadata: data.metadata
       });
