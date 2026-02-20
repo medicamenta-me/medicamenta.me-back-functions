@@ -33,6 +33,7 @@ module.exports = [
       'require-jsdoc': 'off',
       'valid-jsdoc': 'off',
       // TypeScript rules - disabled for Express middleware
+      // TODO(#sprint-5): enable 'error' after fixing all violations
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
@@ -40,6 +41,8 @@ module.exports = [
         caughtErrorsIgnorePattern: '^_',
       }],
       '@typescript-eslint/no-require-imports': 'off',
+      // TODO(#sprint-5): enable 'error' after replacing console with logger
+      'no-console': 'off',
     },
   },
   {

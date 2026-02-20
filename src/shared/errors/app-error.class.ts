@@ -11,8 +11,8 @@
  * @see PRD §27
  */
 
-import { ErrorCode, AppError } from './error-codes';
-import { getErrorCatalogEntry } from './error-catalog';
+import { ErrorCode, AppError } from "./error-codes";
+import { getErrorCatalogEntry } from "./error-catalog";
 
 export class ApplicationError extends Error {
   readonly code: ErrorCode;
@@ -28,7 +28,7 @@ export class ApplicationError extends Error {
   ) {
     const entry = getErrorCatalogEntry(code);
     super(entry.message);
-    this.name = 'ApplicationError';
+    this.name = "ApplicationError";
     this.code = code;
     this.httpStatus = entry.httpStatus;
     this.details = details;
